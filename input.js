@@ -1,11 +1,18 @@
 // input.js - Sets up all user input event listeners for the game.
 
-// Initializes all user input listeners.
-@param {object} // callbacks An object containing the callback functions from main.js.
-@param {function} // callbacks.onKey A function to call when a number key (1-9) is pressed or keypad is clicked.
-@param {function} // callbacks.onPause A function to call to toggle the pause state.
-@param {function} // callbacks.onAudioUnlock A function to call on the first user interaction to enable audio.
+/**
+ * Defines the shape of the callbacks object required by the input initializer.
+ * This provides strong typing and autocompletion in supported IDEs.
+ * @typedef {object} InputCallbacks
+ * @property {function(number): void} onKey - Callback for when a number key is pressed or keypad is clicked.
+ * @property {function(): void} onPause - Callback to toggle the game's pause state.
+ * @property {function(): void} onAudioUnlock - Callback for the first user interaction to enable the Web Audio API.
+ */
 
+/**
+ * Initializes all user input listeners.
+ * @param {InputCallbacks} callbacks The object containing all necessary callback functions.
+ */
 export function initializeInput(callbacks) {
     // Generate the keypad buttons and attach click listeners
     const keypadArea = document.getElementById('keypadArea');
@@ -15,7 +22,7 @@ export function initializeInput(callbacks) {
         btn.className = 'keypad-btn';
         btn.textContent = i;
         btn.id = `key-${i}`;
-        // Call the handleMove callback provided by main.js
+        // Call the onKey callback provided by main.js
         btn.onclick = () => callbacks.onKey(i);
         keypadArea.appendChild(btn);
     }
@@ -29,10 +36,10 @@ export function initializeInput(callbacks) {
         // Handle number inputs (1-9)
         if (e.key >= '1' && e.key <= '9') {
             callbacks.onKey(parseInt(e.key, 10));
-        } 
+        }
         // Handle pause inputs (Escape or P key)
         else if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
-            e.preventDefault(); // Prevents default browser actions (like printing)
+            e.preventDefault(); // Prevents default browser actions
             callbacks.onPause();
         }
     });
