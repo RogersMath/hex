@@ -1,4 +1,4 @@
-// main.js - The new entry point and central controller for the game.
+// main.js - The updated entry point and central controller for the game.
 
 import { initializeInput } from './input.js';
 import { initAudio, playTone } from './audio.js';
@@ -8,12 +8,15 @@ import { showNarrativeScreen, endGame } from './narrative.js';
 import { render } from './render.js';
 
 // === CENTRAL GAME STATE ===
-// All important variables are stored in one place.
 const gameState = {
     // Core state
     gameRunning: false,
     gamePaused: false,
     level: 1,
+
+    // NEW: Accessibility and View state
+    zoomLevel: 1.0, // Start with no zoom
+    cameraOffset: { x: 0, y: 0 }, // For panning the camera
     
     // Time and performance
     startTime: 0,
@@ -33,17 +36,30 @@ const gameState = {
     exitPos: { q: 0, r: 0 },
     validMoves: [],
 
-    // Canvas context, to be initialized
+    // Canvas context
     canvas: null,
     ctx: null,
 };
 
+// === NEW: ZOOM AND CAMERA LOGIC ===
+function setZoom(newZoom) {
+    // Clamp the zoom level between 0.5x and 3x
+    gameState.zoomLevel = Math.max(0.5, Math.min(newZoom, 3.0));
+    updateUI(); // Update the zoom level display
+}
+
+function zoomIn() {
+    setZoom(gameState.zoomLevel + 0.2);
+}
+
+function zoomOut() {
+    setZoom(gameState.zoomLevel - 0.2);
+}
+
 // === CORE GAME LOOP & CONTROL ===
 
 function togglePause() {
-    // Don't allow pausing if the game hasn't started yet
     if (!gameState.gameRunning && !gameState.gamePaused) return;
-
     const pauseScreen = document.getElementById('pauseScreen');
     gameState.gamePaused = !gameState.gamePaused;
 
@@ -53,13 +69,13 @@ function togglePause() {
     } else {
         gameState.totalPausedTime += Date.now() - gameState.pauseTime;
         pauseScreen.style.display = 'none';
-        requestAnimationFrame(mainRenderLoop); // Restart render loop
+        requestAnimationFrame(mainRenderLoop);
     }
 }
 
 function mainRenderLoop() {
     if (gameState.gamePaused || !gameState.gameRunning) return;
-    render(gameState); // Pass the entire state to the render function
+    render(gameState);
     requestAnimationFrame(mainRenderLoop);
 }
 
@@ -69,52 +85,42 @@ function updateUI() {
     const avgPerf = gameState.totalPerformanceScore > 0 ? Math.round(gameState.totalPerformanceScore) : '--';
     document.getElementById('avgPerf').textContent = avgPerf === '--' ? avgPerf : `${avgPerf}%`;
     
+    // UPDATED: Also update zoom display
+    document.getElementById('zoomLevelDisplay').textContent = `${Math.round(gameState.zoomLevel * 100)}%`;
+
     const buttons = document.querySelectorAll('.keypad-btn');
     buttons.forEach((btn, index) => {
         const number = index + 1;
-        // Check validMoves array in gameState to toggle the class
         btn.classList.toggle('valid-move', gameState.validMoves.some(move => move.answer === number));
     });
 }
 
 function levelEnd() {
     gameState.gameRunning = false;
-    
     const parTime = 20 + gameState.level * 5;
     const elapsedSeconds = (Date.now() - gameState.startTime - gameState.totalPausedTime) / 1000;
     const roundPerf = Math.max(10, 100 - Math.max(0, elapsedSeconds - parTime));
-    
-    // Update average performance score
     gameState.totalPerformanceScore = (gameState.totalPerformanceScore * (gameState.level - 1) + roundPerf) / gameState.level;
 
-    // Display round performance feedback
     const perfEl = document.getElementById('roundPerformance');
     perfEl.textContent = `PERF: ${Math.floor(roundPerf)}%`;
     perfEl.style.opacity = 1;
     setTimeout(() => { perfEl.style.opacity = 0; }, 2000);
     
-    // Show the narrative screen after a delay
-    setTimeout(() => {
-        showNarrativeScreen(gameController);
-    }, 2500);
+    setTimeout(() => { showNarrativeScreen(gameController); }, 2500);
 }
 
 function startNextLevel() {
-    // Reset state for the new level
     gameState.gamePaused = false;
     gameState.totalPausedTime = 0;
-    
-    generateMaze(gameState); // Pass state to maze generator
-    updateValidMoves(gameController); // Pass the controller to set up initial moves
-
+    generateMaze(gameState);
+    updateValidMoves(gameController);
     gameState.gameRunning = true;
     gameState.startTime = Date.now();
     mainRenderLoop();
 }
 
 // === GAME CONTROLLER OBJECT ===
-// This object is passed to other modules. It provides a safe, controlled
-// way for them to interact with the game's core logic and state.
 const gameController = {
     gameState,
     updateUI,
@@ -130,28 +136,25 @@ function initializeGame() {
     gameState.canvas = document.getElementById('gameCanvas');
     gameState.ctx = gameState.canvas.getContext('2d');
     
-    // Set up canvas resizing
     const resizeCanvas = () => {
         gameState.canvas.width = gameState.canvas.offsetWidth;
         gameState.canvas.height = gameState.canvas.offsetHeight;
-        // Re-render if the game is active
-        if(gameState.gameRunning) {
-            render(gameState);
-        }
+        if (gameState.gameRunning) render(gameState);
     }
     window.addEventListener('resize', resizeCanvas);
-    resizeCanvas(); // Set initial size
+    resizeCanvas();
 
-    // Set up all user inputs
+    // UPDATED: Pass zoom functions to the input initializer
     initializeInput({
         onKey: (number) => handleMove(number, gameController),
         onPause: togglePause,
         onAudioUnlock: initAudio,
+        onZoomIn: zoomIn,
+        onZoomOut: zoomOut,
     });
-
-    // Start the game by showing the first narrative screen
+    
+    updateUI(); // Initial UI update to set zoom display
     showNarrativeScreen(gameController);
 }
 
-// Kick off the entire application
 initializeGame();
