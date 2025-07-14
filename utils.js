@@ -2,8 +2,8 @@
 
 let audioContext, masterGain;
 
-// Initializes the Web Audio API and starts background music on first user interaction.
-const initAudio = async () => {
+// Initializes the Web Audio API. Accepts the music generation function as a parameter.
+const initAudio = async (generateSong) => {
     if (audioContext) return;
     try {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -15,20 +15,23 @@ const initAudio = async () => {
             masterGain.gain.value = e.target.value / 100;
         });
 
-        await playBackgroundMusic();
+        await playBackgroundMusic(generateSong);
     } catch (e) {
         console.error('Audio init failed:', e);
     }
 };
 
-// Fetches song data and uses the sonantx library to generate and play music.
-const playBackgroundMusic = async () => {
+// Fetches song data and uses the provided generateSong function.
+const playBackgroundMusic = async (generateSong) => {
     if (!audioContext) return;
     try {
+        if (typeof generateSong !== 'function') {
+            console.error("Music engine 'generateSong' was not provided.");
+            return;
+        }
         const response = await fetch('music.json');
         const songData = await response.json();
-
-        // generateSong() is from the loaded sonantx.js library.
+        
         const buffer = await generateSong(songData, audioContext.sampleRate);
         
         const bufferSource = audioContext.createBufferSource();
@@ -86,5 +89,5 @@ const drawGlowText = (ctx, text, x, y, color, size = 16) => {
     
     ctx.fillText(text, x, y);
     
-    ctx.shadowBlur = 0; // Reset for subsequent drawing.
+    ctx.shadowBlur = 0;
 };
