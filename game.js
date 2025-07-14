@@ -1,5 +1,8 @@
-// === GAME STATE & MAIN LOGIC ===
+// Main game module: Orchestrates all other parts of the game.
 
+import { generateSong } from './sonantx.js';
+
+// === GAME STATE & MAIN LOGIC ===
 let gameRunning = false;
 let gamePaused = false;
 let level = 1;
@@ -10,7 +13,7 @@ let totalPerformanceScore = 0;
 let dataFragments = 0;
 
 // === PAUSE & LEVEL MANAGEMENT ===
-function togglePause() {
+const togglePause = () => {
     if (!gameRunning && !gamePaused) return;
 
     const pauseScreen = document.getElementById('pauseScreen');
@@ -22,11 +25,11 @@ function togglePause() {
     } else {
         totalPausedTime += Date.now() - pauseTime;
         pauseScreen.style.display = 'none';
-        requestAnimationFrame(render); // Resume rendering
+        requestAnimationFrame(render);
     }
-}
+};
 
-function endLevel() {
+const endLevel = () => {
     gameRunning = false;
     
     const parTime = 20 + level * 5;
@@ -47,9 +50,9 @@ function endLevel() {
             showNarrativeScreen(level);
         }
     }, 2500);
-}
+};
 
-function startNextLevel() {
+const startNextLevel = () => {
     if (level > narrativeEngine.length) {
         endGame();
         return;
@@ -61,10 +64,10 @@ function startNextLevel() {
     startTime = Date.now();
     render();
     updateUI();
-}
+};
 
 // === RENDERING & UI ===
-function render() {
+const render = () => {
     if (gamePaused || !gameRunning) return;
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -74,12 +77,7 @@ function render() {
     visibleHexes.add(`${exitPos.q},${exitPos.r}`);
 
     hexGrid.forEach((hex, key) => {
-        if (!visibleHexes.has(key)) {
-            // Optionally render a faint grid for context
-            const pixel = axialToPixel(hex.coords);
-            drawHex(ctx, pixel, HEX_SIZE, 'rgba(0, 255, 255, 0.05)', 1);
-            return;
-        }
+        if (!visibleHexes.has(key)) return;
         
         const pixel = axialToPixel(hex.coords);
         let hexColor = '#004466';
@@ -103,10 +101,9 @@ function render() {
     });
 
     requestAnimationFrame(render);
-}
+};
 
-
-function updateUI() {
+const updateUI = () => {
     document.getElementById('level').textContent = level;
     document.getElementById('fragments').textContent = dataFragments;
     document.getElementById('avgPerf').textContent = totalPerformanceScore > 0 ? `${Math.round(totalPerformanceScore)}%` : '--';
@@ -116,51 +113,31 @@ function updateUI() {
         const number = index + 1;
         btn.classList.toggle('valid-move', validMoves.some(move => move.answer === number));
     });
-}
+};
 
 // === INITIALIZATION ===
-function initializeGame() {
-    canvas = document.getElementById('gameCanvas');
-    ctx = canvas.getContext('2d');
+const initializeGame = () => {
+    // Note: canvas and ctx are global in other scripts, so they must be defined here.
+    window.canvas = document.getElementById('gameCanvas');
+    window.ctx = window.canvas.getContext('2d');
     
-    const keypad = document.getElementById('keypadArea');
-    for (let i = 1; i <= 9; i++) {
-        const btn = document.createElement('button');
-        btn.className = 'keypad-btn';
-        btn.textContent = i;
-        btn.id = `key-${i}`;
-        btn.onclick = () => handleMove(i);
-        keypad.appendChild(btn);
-    }
-    
-    // Resize canvas
-    function resizeCanvas() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
+    const resizeCanvas = () => {
+        window.canvas.width = window.canvas.offsetWidth;
+        window.canvas.height = window.canvas.offsetHeight;
         if(gameRunning) render();
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Attach event listeners
-    document.getElementById('pauseBtn').onclick = togglePause;
-    document.getElementById('resumeBtn').onclick = togglePause;
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key >= '1' && e.key <= '9') {
-            handleMove(parseInt(e.key));
-        } else if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
-            e.preventDefault();
-            togglePause();
-        }
+    // Delegate all input setup to the input module, passing callbacks.
+    initializeInput({
+        onKey: handleMove, // handleMove is global from movement.js
+        onPause: togglePause,
+        onAudioUnlock: () => initAudio(generateSong) // initAudio is global from utils.js
     });
-    
-    document.body.addEventListener('click', initAudio, { once: true });
-    document.body.addEventListener('keydown', initAudio, { once: true });
 
-    // Start with the first narrative scene
     showNarrativeScreen(level);
-}
+};
 
 // === START GAME ===
 initializeGame();
