@@ -1,120 +1,133 @@
-// === PLAYER MOVEMENT & EXPRESSION LOGIC ===
+// movement.js - Handles player movement, expression generation, and move validation.
 
-let playerPos = {q: 0, r: 0};
-let validMoves = [];
+/**
+ * Generates a math expression for a given target answer.
+ * @param {number} target The required answer for the expression.
+ * @param {number} level The current game level, used for difficulty scaling.
+ * @returns {object} An object containing the expression text and its answer.
+ */
+function generateExpressionForAnswer(target, level) {
+    const difficulty = Math.min(level, 5);
+    const ops = [];
 
-function updateValidMoves() {
-    validMoves = [];
+    // Always allow simple addition and subtraction as options.
+    const addB = target - Math.floor(Math.random() * (target - 1)) - 1;
+    if (addB > 0) ops.push({ text: `${target - addB}+${addB}` });
+
+    const subB = Math.floor(Math.random() * 9) + 1;
+    ops.push({ text: `${target + subB}-${subB}` });
+
+    if (difficulty > 1) {
+        // Find multiplication factors.
+        for (let i = 2; i <= Math.sqrt(target); i++) {
+            if (target % i === 0 && i <= 9 && target / i <= 9) {
+                ops.push({ text: `${i}×${target / i}` });
+            }
+        }
+    }
     
-    // Auto-collect adjacent data fragments
-    getHexNeighbors(playerPos).forEach(n => {
-        const key = `${n.q},${n.r}`;
+    if (difficulty > 2) {
+        // Add division problems.
+        const divisor = Math.floor(Math.random() * 4) + 2; // Divisors from 2 to 5
+        if (target * divisor <= 99) {
+             ops.push({ text: `${target * divisor}÷${divisor}` });
+        }
+    }
+    
+    if (difficulty > 3) {
+        // Add mixed operation problems.
+        const a = Math.floor(Math.random() * 3) + 1;
+        const b = Math.floor(Math.random() * 3) + 1;
+        const c = target - (a * b);
+        if (c >= 1 && c <= 9) {
+            ops.push({ text: `${a}×${b}+${c}` });
+        }
+    }
+
+    // Select a random operation from the generated list.
+    const selectedOp = ops[Math.floor(Math.random() * ops.length)];
+    return { ...selectedOp, answer: target };
+}
+
+/**
+ * Recalculates valid moves from the player's current position and updates the gameState.
+ * @param {object} gameController The central game controller from main.js.
+ */
+export function updateValidMoves(gameController) {
+    const { gameState, getHexNeighbors, playTone, updateUI } = gameController;
+    const { playerPos, hexGrid } = gameState;
+
+    // Clear out the old valid moves.
+    gameState.validMoves = [];
+    
+    // Automatically collect fragments from any adjacent data nodes.
+    getHexNeighbors(playerPos).forEach(n_coords => {
+        const key = `${n_coords.q},${n_coords.r}`;
         const hex = hexGrid.get(key);
         if (hex && hex.type === 'data' && !hex.collected) {
             hex.collected = true;
-            dataFragments++;
+            gameState.dataFragments++;
             playTone(1200, 0.1, 'triangle');
         }
     });
 
     const neighbors = getHexNeighbors(playerPos);
     const validNeighborCoords = neighbors.filter(n => hexGrid.has(`${n.q},${n.r}`));
-
-    const availableAnswers = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
     
-    for (let i = 0; i < validNeighborCoords.length && i < availableAnswers.length; i++) {
-        const coords = validNeighborCoords[i];
-        const answer = availableAnswers[i];
-        const expression = generateExpressionForAnswer(answer);
+    // Create a shuffled list of possible answers (1-9).
+    const availableAnswers = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => 0.5 - Math.random());
+    
+    // Assign a unique answer and expression to each valid neighboring hex.
+    validNeighborCoords.forEach((coords, index) => {
+        if (index >= availableAnswers.length) return;
         
-        validMoves.push({ coords, answer });
+        const answer = availableAnswers[index];
+        const expression = generateExpressionForAnswer(answer, gameState.level);
         
+        // Update the hex data in the grid.
         const hex = hexGrid.get(`${coords.q},${coords.r}`);
         if (hex) {
             hex.expression = expression.text;
             hex.answer = answer;
         }
-    }
 
-    updateUI();
+        // Add this to the list of valid moves in the gameState.
+        gameState.validMoves.push({ coords, answer });
+    });
+
+    updateUI(); // Refresh the UI to show new valid move highlights.
 }
 
-function generateExpressionForAnswer(target) {
-    const difficulty = Math.min(level, 5);
-    const ops = [];
+/**
+ * Handles the player's move attempt.
+ * @param {number} answer The number the player entered (1-9).
+ * @param {object} gameController The central game controller from main.js.
+ */
+export function handleMove(answer, gameController) {
+    const { gameState, levelEnd, playTone } = gameController;
 
-    // Addition
-    const a_add = Math.floor(Math.random() * (target - 1)) + 1;
-    const b_add = target - a_add;
-    if (b_add >= 1) ops.push({ text: `${a_add}+${b_add}` });
+    if (!gameState.gameRunning || gameState.gamePaused) return;
     
-    // Subtraction
-    const a_sub = target + Math.floor(Math.random() * 9) + 1;
-    const b_sub = a_sub - target;
-    ops.push({ text: `${a_sub}-${b_sub}`});
-
-    if (difficulty > 2) {
-        // Multiplication
-        const factors = [];
-        for (let i = 2; i <= Math.sqrt(target); i++) {
-            if (target % i === 0 && i <= 9 && target / i <= 9) {
-                factors.push([i, target / i]);
-            }
-        }
-        if (factors.length > 0) {
-            const [a_mult, b_mult] = factors[Math.floor(Math.random() * factors.length)];
-            ops.push({ text: `${a_mult}×${b_mult}` });
-        }
-    }
-    
-    if (difficulty > 3) {
-        // Division
-        const divisor = Math.floor(Math.random() * 5) + 2;
-        if (target * divisor <= 99) { // keep numbers reasonable
-             ops.push({ text: `${target * divisor}÷${divisor}` });
-        }
-    }
-    
-    if (difficulty > 4) {
-        // Mixed operations
-        const a_mix = Math.floor(Math.random() * 3) + 1;
-        const b_mix = Math.floor(Math.random() * 3) + 1;
-        const c_mix = target - (a_mix * b_mix);
-        if (c_mix >= 1 && c_mix <= 9) {
-            ops.push({ text: `${a_mix}×${b_mix}+${c_mix}` });
-        }
-    }
-
-    return ops.length > 0
-        ? { ...ops[Math.floor(Math.random() * ops.length)], answer: target }
-        : { text: `${target-1}+1`, answer: target }; // Fallback
-}
-
-
-function handleMove(answer) {
-    if (!gameRunning || gamePaused) return;
-    
-    const validMove = validMoves.find(move => move.answer === answer);
+    const validMove = gameState.validMoves.find(move => move.answer === answer);
     const button = document.getElementById(`key-${answer}`);
     
     if (validMove) {
-        playerPos = validMove.coords;
+        // Correct move
+        gameState.playerPos = validMove.coords;
         playTone(880, 0.1, 'square');
-        if (button) {
-            button.classList.add('correct');
-            setTimeout(() => button.classList.remove('correct'), 600);
-        }
+        button?.classList.add('correct');
+        setTimeout(() => button?.classList.remove('correct'), 600);
         
-        if (playerPos.q === exitPos.q && playerPos.r === exitPos.r) {
-            endLevel();
+        // Check for win condition.
+        if (gameState.playerPos.q === gameState.exitPos.q && gameState.playerPos.r === gameState.exitPos.r) {
+            levelEnd();
         } else {
-            updateValidMoves();
+            updateValidMoves(gameController); // Recalculate next set of moves.
         }
     } else {
+        // Incorrect move
         playTone(220, 0.2, 'sawtooth');
-        if (button) {
-            button.classList.add('incorrect');
-            setTimeout(() => button.classList.remove('incorrect'), 500);
-        }
+        button?.classList.add('incorrect');
+        setTimeout(() => button?.classList.remove('incorrect'), 500);
     }
 }
