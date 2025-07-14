@@ -338,6 +338,42 @@
             }
         }
 
+/* NEW: Zoom Control Styles */
+.zoom-controls {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.zoom-btn {
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 191, 255, 0.1));
+    border: 2px solid #00ffff;
+    color: #00ffff;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 900;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 0 8px #00ffff;
+    padding-bottom: 2px; /* Optical alignment for + and - */
+}
+
+.zoom-btn:hover {
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(0, 255, 255, 0.3));
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+}
+
+
         .exit-hex {
             animation: exitPulse 2s ease-in-out infinite;
         }
