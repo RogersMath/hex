@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EXIT</title>
+    <title>HEX</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -54,20 +54,9 @@
     </div>
 
     <!-- 
-      Scripts are loaded in a specific order.
-      Classic scripts load first to create global helper functions.
-      The 'game.js' module is loaded last to start the game.
+      We only need to load a single entry-point script as a module.
+      This script will handle importing all other necessary modules.
     -->
-    <script src="utils.js"></script>
-    <script src="narrative.js"></script>
-    <script src="map.js"></script>
-    <script src="movement.js"></script>
-    <script src="input.js"></script>
-    
-    <!-- 
-      Load game.js as a module. It will import from sonantx.js
-      and use the globally-loaded functions from the scripts above.
-    -->
-    <script type="module" src="game.js"></script>
+    <script type="module" src="main.js"></script>
 </body>
 </html>
