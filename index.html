@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hex Math Maze</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Orbitron', monospace;
+            background: #000;
+            color: #00ffff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Game Container */
+        #gameContainer {
+            width: 100%;
+            height: 70%;
+            position: relative;
+            background: radial-gradient(circle at center, #001122 0%, #000000 100%);
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: transparent;
+        }
+        
+        /* Game UI - minimal pause button only */
+        #gameUI {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        
+        .pause-btn {
+            background: linear-gradient(135deg, rgba(255, 255, 0, 0.2), rgba(255, 191, 0, 0.2));
+            border: 2px solid #ffff00;
+            border-radius: 8px;
+            color: #ffff00;
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(255, 255, 0, 0.3);
+            text-shadow: 0 0 10px #ffff00;
+        }
+        
+        .pause-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 0, 0.3), rgba(255, 255, 0, 0.4));
+            transform: translateY(-1px) scale(1.02);
+            box-shadow: 0 3px 20px rgba(255, 255, 0, 0.5);
+        }
+        
+        .ui-text {
+            margin: 5px 0;
+            font-weight: 700;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        /* Pause menu */
+        #pauseScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70%;
+            background: linear-gradient(45deg, rgba(0, 17, 34, 0.95), rgba(0, 8, 17, 0.95));
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #00ffff;
+            text-align: center;
+            z-index: 200;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .pause-instructions {
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(191, 0, 255, 0.1));
+            border: 2px solid #ff00ff;
+            border-radius: 10px;
+            padding: 20px 30px;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5), inset 0 0 20px rgba(255, 0, 255, 0.1);
+            backdrop-filter: blur(5px);
+            max-width: 500px;
+            color: #ff88ff;
+            margin-bottom: 30px;
+        }
+        
+        .pause-instructions h3 {
+            color: #ffaaff;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .pause-instructions p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        
+        .pause-stats {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 191, 255, 0.1));
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 20px 30px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(0, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            margin-bottom: 20px;
+            color: #00ffff;
+            text-align: center;
+        }
+        
+        .pause-stats .stat-item {
+            display: inline-block;
+            margin: 0 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        /* Number keypad */
+        #keypadArea {
+            height: 30%;
+            background: linear-gradient(180deg, #001122 0%, #000011 100%);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 20px;
+            border-top: 3px solid #00ffff;
+            box-shadow: 0 -10px 30px rgba(0, 255, 255, 0.3);
+        }
+        
+        .keypad-btn {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 191, 255, 0.1));
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            color: #00ffff;
+            font-size: clamp(2rem, 8vw, 4rem);
+            font-family: 'Orbitron', monospace;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 0 10px #00ffff;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 255, 0.3),
+                inset 0 0 20px rgba(0, 255, 255, 0.1);
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .keypad-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .keypad-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(0, 255, 255, 0.3));
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 5px 25px rgba(0, 255, 255, 0.5),
+                inset 0 0 30px rgba(0, 255, 255, 0.2);
+            border-color: #88ffff;
+            color: #88ffff;
+        }
+        
+        .keypad-btn:hover::before {
+            left: 100%;
+        }
+        
+        .keypad-btn:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 
+                0 2px 15px rgba(0, 255, 255, 0.4),
+                inset 0 0 25px rgba(0, 255, 255, 0.3);
+        }
+        
+        .keypad-btn.valid-move {
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.2), rgba(0, 255, 127, 0.2));
+            border-color: #00ff7f;
+            color: #00ff7f;
+            box-shadow: 
+                0 0 25px rgba(0, 255, 127, 0.5),
+                inset 0 0 25px rgba(0, 255, 127, 0.1);
+            animation: validPulse 2s ease-in-out infinite;
+        }
+        
+        .keypad-btn.correct {
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.4), rgba(0, 255, 127, 0.4));
+            animation: correctFlash 0.6s ease;
+        }
+        
+        .keypad-btn.incorrect {
+            background: linear-gradient(135deg, rgba(255, 0, 0, 0.4), rgba(255, 63, 0, 0.4));
+            border-color: #ff0000;
+            color: #ff8888;
+            animation: incorrectShake 0.5s ease;
+        }
+        
+        /* Menu screens */
+        #startScreen, #winScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70%;
+            background: linear-gradient(45deg, rgba(0, 17, 34, 0.95), rgba(0, 8, 17, 0.95));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #00ffff;
+            text-align: center;
+            z-index: 200;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        #winScreen {
+            display: none;
+        }
+        
+        .menu-title {
+            font-size: clamp(2rem, 8vw, 4rem);
+            font-weight: 900;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px #00ffff;
+            background: linear-gradient(45deg, #00ffff, #ff00ff, #ffff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: neonFlicker 3s ease-in-out infinite alternate;
+        }
+        
+        .menu-text {
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            margin-bottom: 15px;
+            line-height: 1.6;
+            max-width: 600px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        .start-btn {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(0, 191, 255, 0.2));
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            color: #00ffff;
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            font-weight: 700;
+            padding: 20px 40px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        .start-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.3), rgba(0, 255, 255, 0.4));
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 5px 30px rgba(0, 255, 255, 0.7);
+        }
+        
+        /* Animations */
+        @keyframes neonFlicker {
+            0%, 100% { 
+                text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff;
+            }
+            50% { 
+                text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff;
+            }
+        }
+        
+        @keyframes validPulse {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 25px rgba(0, 255, 127, 0.5),
+                    inset 0 0 25px rgba(0, 255, 127, 0.1);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 35px rgba(0, 255, 127, 0.8),
+                    inset 0 0 35px rgba(0, 255, 127, 0.2);
+            }
+        }
+        
+        @keyframes correctFlash {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        @keyframes incorrectShake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+            20%, 40%, 60%, 80% { transform: translateX(8px); }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .keypad-btn {
+                font-size: clamp(1.5rem, 10vw, 3rem);
+            }
+            
+            #gameUI {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .pause-btn {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // Game state
+        let gameRunning = false;
+        let level = 1;
+        let moves = 0;
+        let startTime = 0;
+        let gameTimer = null;
+        
+        // Hex grid system
+        const HEX_SIZE = 35;
+        const GRID_RADIUS = 4;
+        let hexGrid = new Map();
+        let playerPos = {q: 0, r: 0};
+        let exitPos = {q: 0, r: 0};
+        let validMoves = [];
+        
+        // Canvas setup - will be initialized after DOM loads
+        let canvas;
+        let ctx;
+        
+        function resizeCanvas() {
+            if (canvas) {
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+            }
+        }
+        
+        // Hex coordinate system functions
+        function axialToCubic({q, r}) {
+            return {x: q, y: -q-r, z: r};
+        }
+        
+        function cubicToAxial({x, y, z}) {
+            return {q: x, r: z};
+        }
+        
+        function axialToPixel({q, r}) {
+            if (!canvas) return {x: 0, y: 0};
+            // Center player at screen center by offsetting by player position
+            const x = HEX_SIZE * (3/2 * (q - playerPos.q));
+            const y = HEX_SIZE * (Math.sqrt(3)/2 * ((q - playerPos.q) + 2*(r - playerPos.r)));
+            return {
+                x: x + canvas.width/2,
+                y: y + canvas.height/2
+            };
+        }
+        
+        function hexDistance(a, b) {
+            const ac = axialToCubic(a);
+            const bc = axialToCubic(b);
+            return (Math.abs(ac.x - bc.x) + Math.abs(ac.y - bc.y) + Math.abs(ac.z - bc.z)) / 2;
+        }
+        
+        function getHexNeighbors({q, r}) {
+            return [
+                {q: q+1, r: r}, {q: q-1, r: r},
+                {q: q, r: r+1}, {q: q, r: r-1},
+                {q: q+1, r: r-1}, {q: q-1, r: r+1}
+            ];
+        }
+        
+        function hexInRange(center, range) {
+            const results = [];
+            for (let dx = -range; dx <= range; dx++) {
+                for (let dy = Math.max(-range, -dx-range); dy <= Math.min(range, -dx+range); dy++) {
+                    const dz = -dx - dy;
+                    results.push({q: center.q + dx, r: center.r + dz});
+                }
+            }
+            return results;
+        }
+        
+        // Generate unique expressions for valid moves ensuring each digit 1-9 appears at most once
+        function generateUniqueExpressions(validPositions) {
+            const usedAnswers = new Set();
+            const expressions = [];
+            
+            // Shuffle available answers 1-9
+            const availableAnswers = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
+            
+            for (let i = 0; i < validPositions.length && i < availableAnswers.length; i++) {
+                const answer = availableAnswers[i];
+                const expression = generateExpressionForAnswer(answer);
+                expressions.push({
+                    coords: validPositions[i],
+                    expression: expression.text,
+                    answer: answer
+                });
+                usedAnswers.add(answer);
+            }
+            
+            return expressions;
+        }
+        
+        // Generate expression that equals a specific answer
+        function generateExpressionForAnswer(target) {
+            const difficulty = Math.min(level, 5);
+            
+            if (difficulty <= 2) {
+                // Easy: addition and subtraction
+                const isAdd = Math.random() > 0.5;
+                
+                if (isAdd) {
+                    const a = Math.floor(Math.random() * (target - 1)) + 1;
+                    const b = target - a;
+                    if (b >= 1) return {text: `${a}+${b}`, answer: target};
+                }
+                
+                // Subtraction
+                const a = target + Math.floor(Math.random() * 9) + 1;
+                const b = a - target;
+                return {text: `${a}-${b}`, answer: target};
+                
+            } else if (difficulty <= 4) {
+                // Medium: multiplication and division
+                const isMult = Math.random() > 0.5;
+                
+                if (isMult) {
+                    const factors = [];
+                    for (let i = 1; i <= target; i++) {
+                        if (target % i === 0 && i <= 9 && target/i <= 9) {
+                            factors.push([i, target/i]);
+                        }
+                    }
+                    if (factors.length > 0) {
+                        const [a, b] = factors[Math.floor(Math.random() * factors.length)];
+                        return {text: `${a}×${b}`, answer: target};
+                    }
+                }
+                
+                // Division
+                const divisor = Math.floor(Math.random() * 9) + 1;
+                const dividend = target * divisor;
+                return {text: `${dividend}÷${divisor}`, answer: target};
+                
+            } else {
+                // Hard: mixed operations
+                if (Math.random() > 0.5) {
+                    const a = Math.floor(Math.random() * 3) + 1;
+                    const b = Math.floor(Math.random() * 3) + 1;
+                    const c = target - a * b;
+                    if (c >= 1 && c <= 9) {
+                        return {text: `${a}×${b}+${c}`, answer: target};
+                    }
+                }
+                
+                // Fallback to simpler operation
+                const a = Math.floor(Math.random() * (target - 1)) + 1;
+                const b = target - a;
+                return {text: `${a}+${b}`, answer: target};
+            }
+        }
+        function generateExpression() {
+            const difficulty = Math.min(level, 5);
+            
+            if (difficulty <= 2) {
+                // Easy: addition and subtraction
+                const result = Math.floor(Math.random() * 9) + 1;
+                const isAdd = Math.random() > 0.5;
+                
+                if (isAdd) {
+                    const a = Math.floor(Math.random() * (result - 1)) + 1;
+                    const b = result - a;
+                    return {text: `${a}+${b}`, answer: result};
+                } else {
+                    const a = result + Math.floor(Math.random() * 9) + 1;
+                    const b = a - result;
+                    return {text: `${a}-${b}`, answer: result};
+                }
+            } else if (difficulty <= 4) {
+                // Medium: multiplication and division
+                const result = Math.floor(Math.random() * 9) + 1;
+                const isMult = Math.random() > 0.5;
+                
+                if (isMult) {
+                    const factors = [];
+                    for (let i = 1; i <= result; i++) {
+                        if (result % i === 0 && i <= 9 && result/i <= 9) {
+                            factors.push([i, result/i]);
+                        }
+                    }
+                    if (factors.length > 0) {
+                        const [a, b] = factors[Math.floor(Math.random() * factors.length)];
+                        return {text: `${a}×${b}`, answer: result};
+                    }
+                }
+                
+                // Fallback to division
+                const divisor = Math.floor(Math.random() * 9) + 1;
+                const dividend = result * divisor;
+                return {text: `${dividend}÷${divisor}`, answer: result};
+            } else {
+                // Hard: mixed operations
+                const result = Math.floor(Math.random() * 9) + 1;
+                const operations = [
+                    () => {
+                        const a = Math.floor(Math.random() * 3) + 1;
+                        const b = Math.floor(Math.random() * 3) + 1;
+                        const c = result - a * b;
+                        if (c >= 1 && c <= 9) {
+                            return {text: `${a}×${b}+${c}`, answer: result};
+                        }
+                        return {text: `2+3`, answer: 5};
+                    },
+                    () => {
+                        const a = result + Math.floor(Math.random() * 10) + 1;
+                        const b = Math.floor(Math.random() * 3) + 2;
+                        const c = Math.floor((a - result) / b);
+                        if (c >= 1 && c <= 9 && a - b * c === result) {
+                            return {text: `${a}-${b}×${c}`, answer: result};
+                        }
+                        return {text: `8-2`, answer: 6};
+                    }
+                ];
+                
+                const generator = operations[Math.floor(Math.random() * operations.length)];
+                return generator();
+            }
+        }
+        
+        // Generate maze
+        function generateMaze() {
+            hexGrid.clear();
+            
+            // Scale grid size with level
+            const currentGridRadius = Math.min(GRID_RADIUS + Math.floor(level / 3), 7);
+            
+            // Generate all hexes in range
+            const allHexes = hexInRange({q: 0, r: 0}, currentGridRadius);
+            
+            // Create a connected maze using modified Prim's algorithm
+            const walls = new Set();
+            const maze = new Set();
+            
+            // Start with center hex
+            const start = allHexes[Math.floor(Math.random() * allHexes.length)];
+            maze.add(`${start.q},${start.r}`);
+            
+            // Add walls of starting hex
+            getHexNeighbors(start).forEach(neighbor => {
+                if (allHexes.some(h => h.q === neighbor.q && h.r === neighbor.r)) {
+                    walls.add(`${neighbor.q},${neighbor.r}`);
+                }
+            });
+            
+            // Generate maze with density based on level
+            const mazeDensity = Math.min(0.6 + level * 0.05, 0.9);
+            
+            while (walls.size > 0) {
+                const wallArray = Array.from(walls);
+                const randomWall = wallArray[Math.floor(Math.random() * wallArray.length)];
+                walls.delete(randomWall);
+                
+                const [q, r] = randomWall.split(',').map(Number);
+                const hex = {q, r};
+                
+                // Check if this wall connects to the maze
+                const neighbors = getHexNeighbors(hex);
+                const mazeNeighbors = neighbors.filter(n => maze.has(`${n.q},${n.r}`));
+                
+                if (mazeNeighbors.length === 1 && Math.random() < mazeDensity) {
+                    // Add to maze
+                    maze.add(randomWall);
+                    
+                    // Add its walls
+                    neighbors.forEach(neighbor => {
+                        if (allHexes.some(h => h.q === neighbor.q && h.r === neighbor.r) && 
+                            !maze.has(`${neighbor.q},${neighbor.r}`)) {
+                            walls.add(`${neighbor.q},${neighbor.r}`);
+                        }
+                    });
+                }
+            }
+            
+            // Ensure minimum maze size
+            while (maze.size < Math.max(7, currentGridRadius * 2)) {
+                const remainingHexes = allHexes.filter(hex => !maze.has(`${hex.q},${hex.r}`));
+                if (remainingHexes.length === 0) break;
+                
+                const randomHex = remainingHexes[Math.floor(Math.random() * remainingHexes.length)];
+                maze.add(`${randomHex.q},${randomHex.r}`);
+            }
+            
+            // Convert maze to hex grid with expressions
+            const mazeArray = Array.from(maze).map(key => {
+                const [q, r] = key.split(',').map(Number);
+                return {q, r};
+            });
+            
+            mazeArray.forEach(hex => {
+                const expression = generateExpression();
+                hexGrid.set(`${hex.q},${hex.r}`, {
+                    coords: hex,
+                    expression: expression.text,
+                    answer: expression.answer,
+                    type: 'normal'
+                });
+            });
+            
+            // Set player position (random valid hex)
+            const validPositions = mazeArray.filter(hex => 
+                hexGrid.has(`${hex.q},${hex.r}`)
+            );
+            playerPos = validPositions[Math.floor(Math.random() * validPositions.length)];
+            
+            // Set exit position (far from player)
+            let bestExit = playerPos;
+            let maxDistance = 0;
+            validPositions.forEach(hex => {
+                const distance = hexDistance(playerPos, hex);
+                if (distance > maxDistance) {
+                    maxDistance = distance;
+                    bestExit = hex;
+                }
+            });
+            exitPos = bestExit;
+            
+            // Mark exit hex
+            const exitHex = hexGrid.get(`${exitPos.q},${exitPos.r}`);
+            if (exitHex) {
+                exitHex.type = 'exit';
+            }
+            
+            updateValidMoves();
+        }
+        
+        // Update valid moves and generate unique expressions
+        function updateValidMoves() {
+            validMoves = [];
+            
+            const neighbors = getHexNeighbors(playerPos);
+            const validPositions = neighbors.filter(neighbor => {
+                return hexGrid.has(`${neighbor.q},${neighbor.r}`);
+            });
+            
+            // Generate unique expressions for each valid move
+            const expressions = generateUniqueExpressions(validPositions);
+            
+            expressions.forEach(expr => {
+                validMoves.push({
+                    coords: expr.coords,
+                    answer: expr.answer
+                });
+                
+                // Update the hex with new expression
+                const hex = hexGrid.get(`${expr.coords.q},${expr.coords.r}`);
+                if (hex) {
+                    hex.expression = expr.expression;
+                    hex.answer = expr.answer;
+                }
+            });
+            
+            // Update keypad button styles
+            const buttons = document.querySelectorAll('.keypad-btn');
+            buttons.forEach((btn, index) => {
+                const number = index + 1;
+                btn.classList.remove('valid-move');
+                
+                if (validMoves.some(move => move.answer === number)) {
+                    btn.classList.add('valid-move');
+                }
+            });
+        }
+        
+        // Handle player movement
+        function handleMove(answer) {
+            if (!gameRunning) return;
+            
+            const validMove = validMoves.find(move => move.answer === answer);
+            const button = document.querySelectorAll('.keypad-btn')[answer - 1];
+            
+            if (validMove) {
+                // Valid move
+                playerPos = validMove.coords;
+                moves++;
+                
+                // Sound effect - success tone
+                playTone(880, 0.1, 'square');
+                
+                // Visual feedback
+                button.classList.add('correct');
+                setTimeout(() => button.classList.remove('correct'), 600);
+                
+                // Check if reached exit
+                if (playerPos.q === exitPos.q && playerPos.r === exitPos.r) {
+                    // Victory sound sequence
+                    setTimeout(() => playTone(523, 0.15), 0);
+                    setTimeout(() => playTone(659, 0.15), 150);
+                    setTimeout(() => playTone(784, 0.3), 300);
+                    endLevel();
+                } else {
+                    updateValidMoves();
+                    updateUI();
+                }
+            } else {
+                // Invalid move - error tone
+                playTone(220, 0.2, 'sawtooth');
+                
+                // Visual feedback
+                button.classList.add('incorrect');
+                setTimeout(() => button.classList.remove('incorrect'), 500);
+            }
+        }
+        
+        // Draw hex
+        function drawHex(center, size, color, lineWidth = 2) {
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = i * Math.PI / 3;
+                const x = center.x + size * Math.cos(angle);
+                const y = center.y + size * Math.sin(angle);
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.closePath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+        }
+        
+        // Draw text with glow effect
+        function drawGlowText(text, x, y, color, size = 16) {
+            ctx.font = `bold ${size}px Orbitron`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Glow effect
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = color;
+            ctx.fillText(text, x, y);
+            
+            // Reset shadow
+            ctx.shadowBlur = 0;
+        }
+        
+        // Background particle effect
+        let particles = [];
+        
+        function createParticle() {
+            return {
+                x: canvas ? Math.random() * canvas.width : 0,
+                y: canvas ? Math.random() * canvas.height : 0,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                life: 1.0,
+                decay: Math.random() * 0.005 + 0.001
+            };
+        }
+        
+        function updateParticles() {
+            if (!canvas) return;
+            
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= p.decay;
+                
+                // Wrap around screen
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+                
+                // Remove dead particles
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    particles.push(createParticle());
+                }
+            }
+        }
+        
+        function drawParticles() {
+            if (!ctx) return;
+            
+            ctx.save();
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life * 0.3;
+                ctx.fillStyle = '#00ffff';
+                ctx.shadowColor = '#00ffff';
+                ctx.shadowBlur = 5;
+                ctx.fillRect(p.x, p.y, 1, 1);
+            });
+            ctx.restore();
+        }
+        
+        // Render game
+        function render() {
+            if (!gameRunning || !ctx || !canvas) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw particles
+            updateParticles();
+            drawParticles();
+            
+            // Draw grid hexes - only show player and adjacent hexes with expressions
+            hexGrid.forEach(hex => {
+                const pixel = axialToPixel(hex.coords);
+                const isPlayer = hex.coords.q === playerPos.q && hex.coords.r === playerPos.r;
+                const isExit = hex.type === 'exit';
+                const isNeighbor = validMoves.some(move => 
+                    move.coords.q === hex.coords.q && move.coords.r === hex.coords.r
+                );
+                
+                // Only render player, exit, and adjacent hexes
+                if (!isPlayer && !isExit && !isNeighbor) {
+                    // Draw invisible hex (black) for maze structure but no text
+                    drawHex(pixel, HEX_SIZE, '#111111', 1);
+                    return;
+                }
+                
+                // Determine colors
+                let hexColor = '#004466';
+                let textColor = '#00ffff';
+                
+                if (isExit) {
+                    hexColor = '#ff00ff';
+                    textColor = '#ffaaff';
+                } else if (isPlayer) {
+                    hexColor = '#00ffff';
+                    textColor = '#000000';
+                } else if (isNeighbor) {
+                    hexColor = '#00ff7f';
+                    textColor = '#ffffff';
+                }
+                
+                // Draw hex outline with pulsing effect for neighbors
+                const pulseIntensity = isNeighbor ? 1 + 0.3 * Math.sin(Date.now() * 0.005) : 1;
+                drawHex(pixel, HEX_SIZE * pulseIntensity, hexColor, isPlayer ? 4 : 2);
+                
+                // Fill player hex with animated glow
+                if (isPlayer) {
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = i * Math.PI / 3;
+                        const x = pixel.x + (HEX_SIZE - 2) * Math.cos(angle);
+                        const y = pixel.y + (HEX_SIZE - 2) * Math.sin(angle);
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    ctx.closePath();
+                    const glowIntensity = 0.4 + 0.2 * Math.sin(Date.now() * 0.003);
+                    ctx.fillStyle = `rgba(0, 255, 255, ${glowIntensity})`;
+                    ctx.fill();
+                    
+                    // Add extra bright border for player
+                    drawHex(pixel, HEX_SIZE - 5, '#ffffff', 2);
+                }
+                
+                // Pulsing effect for exit
+                if (isExit) {
+                    const exitPulse = 1 + 0.3 * Math.sin(Date.now() * 0.008);
+                    drawHex(pixel, HEX_SIZE * exitPulse * 0.8, '#ff88ff', 1);
+                    
+                    // Fill exit hex with magenta glow
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = i * Math.PI / 3;
+                        const x = pixel.x + (HEX_SIZE - 3) * Math.cos(angle);
+                        const y = pixel.y + (HEX_SIZE - 3) * Math.sin(angle);
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    ctx.closePath();
+                    const exitGlow = 0.3 + 0.2 * Math.sin(Date.now() * 0.008);
+                    ctx.fillStyle = `rgba(255, 0, 255, ${exitGlow})`;
+                    ctx.fill();
+                }
+                
+                // Draw expression or exit text (only for visible hexes)
+                if (isExit) {
+                    drawGlowText('EXIT', pixel.x, pixel.y, textColor, 14);
+                } else if (isNeighbor && hex.expression) {
+                    drawGlowText(hex.expression, pixel.x, pixel.y, textColor, 12);
+                }
+                
+                // Draw connection lines to valid moves
+                if (isPlayer) {
+                    validMoves.forEach(move => {
+                        const targetPixel = axialToPixel(move.coords);
+                        ctx.beginPath();
+                        ctx.moveTo(pixel.x, pixel.y);
+                        ctx.lineTo(targetPixel.x, targetPixel.y);
+                        ctx.strokeStyle = 'rgba(0, 255, 127, 0.3)';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    });
+                }
+            });
+            
+            requestAnimationFrame(render);
+        }
+        
+        // Update UI
+        function updateUI() {
+            document.getElementById('level').textContent = level;
+            document.getElementById('moves').textContent = moves;
+            
+            if (gameTimer) {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('time').textContent = elapsed;
+            }
+        }
+        
+        // End level
+        function endLevel() {
+            level++;
+            
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('finalMoves').textContent = moves;
+            document.getElementById('finalTime').textContent = elapsed;
+            document.getElementById('winScreen').style.display = 'flex';
+            
+            // Temporarily stop game
+            gameRunning = false;
+        }
+        
+        // Pause/Resume game
+        function togglePause() {
+            const pauseScreen = document.getElementById('pauseScreen');
+            
+            if (gameRunning) {
+                // Pause the game
+                gameRunning = false;
+                if (gameTimer) {
+                    clearInterval(gameTimer);
+                    gameTimer = null;
+                }
+                pauseScreen.style.display = 'flex';
+            } else {
+                // Resume the game
+                gameRunning = true;
+                startTime = Date.now() - (moves * 1000); // Rough time adjustment
+                gameTimer = setInterval(updateUI, 1000);
+                pauseScreen.style.display = 'none';
+                render(); // Restart rendering
+            }
+        }
+        function startGame() {
+            if (!canvas || !ctx) {
+                console.error('Canvas not initialized yet');
+                return;
+            }
+            
+            gameRunning = true;
+            level = 1;
+            moves = 0;
+            startTime = Date.now();
+            
+            // Hide menus
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('winScreen').style.display = 'none';
+            
+            // Generate first maze
+            generateMaze();
+            
+            // Start game timer
+            gameTimer = setInterval(updateUI, 1000);
+            
+            // Start rendering
+            render();
+            updateUI();
+        }
+        
+        // Generate new maze
+        function generateNewMaze() {
+            document.getElementById('winScreen').style.display = 'none';
+            gameRunning = true;
+            moves = 0;
+            startTime = Date.now();
+            
+            // Clear any existing timer
+            if (gameTimer) {
+                clearInterval(gameTimer);
+            }
+            
+            // Generate maze and restart everything
+            generateMaze();
+            
+            // Restart game timer
+            gameTimer = setInterval(updateUI, 1000);
+            
+            // Restart rendering
+            render();
+            updateUI();
+        }
+        
+        // Sound effects (using Web Audio API for Tron-like sounds)
+        let audioContext;
+        
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+        
+        function playTone(frequency, duration, type = 'sine') {
+            if (!audioContext) return;
+            
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = type;
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.log('Audio playback failed');
+            }
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '1' && e.key <= '9') {
+                handleMove(parseInt(e.key));
+            } else if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+                if (level > 1 || moves > 0) { // Only allow pause if game has started
+                    togglePause();
+                }
+            }
+        });
+        
+        // Initialize audio context on first user interaction
+        document.addEventListener('click', () => {
+            if (!audioContext) {
+                initAudio();
+            }
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }, { once: true });
+        
+        // Initialize everything after DOM is loaded
+        function initializeGame() {
+            // Get canvas and context
+            canvas = document.getElementById('gameCanvas');
+            if (canvas) {
+                ctx = canvas.getContext('2d');
+                
+                // Set up canvas
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+                
+                // Initialize particles
+                for (let i = 0; i < 50; i++) {
+                    particles.push(createParticle());
+                }
+                
+                // Initialize audio
+                initAudio();
+            }
+        }
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeGame);
+        } else {
+            initializeGame();
+        }
+    </script>
+
+    <!-- Pause Screen -->
+    <div id="pauseScreen">
+        <div class="pause-instructions">
+            <h3>⬡ GAME PAUSED ⬡</h3>
+            <p><strong>CONTROLS:</strong></p>
+            <p>• Press number keys 1-9 or click keypad</p>
+            <p>• Move to hex with matching answer</p>
+            <p>• Reach the EXIT to win the level</p>
+            <p>• Cyan hex = Player position</p>
+            <p>• Magenta hex = Exit</p>
+            <p>• Green hexes = Valid moves</p>
+            <p><strong>Press P or ESC to resume</strong></p>
+        </div>
+        <button class="start-btn" onclick="togglePause()">⚡ RESUME GAME ⚡</button>
+    </div>
+    <div id="startScreen">
+        <div class="menu-title">⬡ HEX MATH MAZE ⬡</div>
+        <div class="menu-text">Navigate the procedural maze by solving expressions</div>
+        <div class="menu-text">Each hex shows a math problem - press the answer to move there</div>
+        <div class="menu-text">Find the exit to generate a new maze!</div>
+        <button class="start-btn" onclick="startGame()">⚡ ENTER THE GRID ⚡</button>
+    </div>
+    
+    <!-- Win Screen -->
+    <div id="winScreen">
+        <div class="menu-title">⬢ MAZE SOLVED ⬢</div>
+        <div class="menu-text">Moves: <span id="finalMoves">0</span></div>
+        <div class="menu-text">Time: <span id="finalTime">0</span>s</div>
+        <button class="start-btn" onclick="generateNewMaze()">⚡ NEXT MAZE ⚡</button>
+    </div>
+    
+    <!-- Game Container -->
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Game UI -->
+        <div id="gameUI">
+            <div class="ui-text">Level: <span id="level">1</span></div>
+            <div class="ui-text">Moves: <span id="moves">0</span></div>
+            <div class="ui-text">Time: <span id="time">0</span>s</div>
+            <button class="pause-btn" onclick="togglePause()">⏸ PAUSE</button>
+        </div>
+    </div>
+    
+    <!-- Number Keypad -->
+    <div id="keypadArea">
+        <button class="keypad-btn" onclick="handleMove(1)">1</button>
+        <button class="keypad-btn" onclick="handleMove(2)">2</button>
+        <button class="keypad-btn" onclick="handleMove(3)">3</button>
+        <button class="keypad-btn" onclick="handleMove(4)">4</button>
+        <button class="keypad-btn" onclick="handleMove(5)">5</button>
+        <button class="keypad-btn" onclick="handleMove(6)">6</button>
+        <button class="keypad-btn" onclick="handleMove(7)">7</button>
+        <button class="keypad-btn" onclick="handleMove(8)">8</button>
+        <button class="keypad-btn" onclick="handleMove(9)">9</button>
+    </div>
+
+</body>
+</html>
