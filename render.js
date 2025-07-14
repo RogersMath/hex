@@ -1,34 +1,32 @@
 // render.js - Contains all Canvas rendering logic for the game.
 
-const HEX_SIZE = 35; // The size of the hexagons in pixels.
+const HEX_SIZE = 35; // The base size of the hexagons remains constant.
 
 /**
- * Converts axial hex coordinates to pixel coordinates on the canvas.
- * @param {HTMLCanvasElement} canvas The canvas element.
+ * Converts axial hex coordinates to raw pixel coordinates (without camera adjustments).
  * @param {object} coords The axial coordinates { q, r }.
- * @returns {object} The pixel coordinates { x, y }.
+ * @returns {object} The raw pixel coordinates { x, y }.
  */
-function axialToPixel(canvas, { q, r }) {
+function axialToPixel({ q, r }) {
     const x = HEX_SIZE * (1.5 * q);
     const y = HEX_SIZE * (Math.sqrt(3) / 2 * q + Math.sqrt(3) * r);
-    // Center the grid on the canvas
-    return { x: x + canvas.width / 2, y: y + canvas.height / 2 };
+    return { x, y };
 }
 
 /**
  * Draws a single hexagon outline on the canvas.
+ * Its size is constant; the canvas scale handles the visual size.
  * @param {CanvasRenderingContext2D} ctx The canvas rendering context.
  * @param {object} center The center pixel coordinate { x, y }.
- * @param {number} size The size of the hex.
  * @param {string} color The stroke color.
  * @param {number} lineWidth The width of the outline.
  */
-function drawHex(ctx, center, size, color, lineWidth = 2) {
+function drawHex(ctx, center, color, lineWidth = 2) {
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
         const angle = (Math.PI / 3) * i;
-        const x = center.x + size * Math.cos(angle);
-        const y = center.y + size * Math.sin(angle);
+        const x = center.x + HEX_SIZE * Math.cos(angle);
+        const y = center.y + HEX_SIZE * Math.sin(angle);
         if (i === 0) {
             ctx.moveTo(x, y);
         } else {
@@ -37,7 +35,8 @@ function drawHex(ctx, center, size, color, lineWidth = 2) {
     }
     ctx.closePath();
     ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
+    // UPDATED: Adjust line width based on zoom so it doesn't get too thick/thin.
+    ctx.lineWidth = lineWidth / ctx.getTransform().a; // .a is the horizontal scale
     ctx.stroke();
 }
 
@@ -45,57 +44,49 @@ function drawHex(ctx, center, size, color, lineWidth = 2) {
  * Draws centered text with a glowing effect.
  * @param {CanvasRenderingContext2D} ctx The canvas rendering context.
  * @param {string} text The text to draw.
- * @param {number} x The center x-coordinate.
- * @param {number} y The center y-coordinate.
+ * @param {object} center The center pixel coordinate { x, y }.
  * @param {string} color The text color.
  * @param {number} size The font size.
  */
-function drawGlowText(ctx, text, x, y, color, size = 16) {
+function drawGlowText(ctx, text, center, color, size = 16) {
     ctx.font = `bold ${size}px 'Courier New'`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    
-    // The glow is created using a shadow
     ctx.shadowColor = color;
     ctx.shadowBlur = 10;
     ctx.fillStyle = color;
-    
-    ctx.fillText(text, x, y);
-    
-    // Reset shadow to prevent it from affecting other elements
+    ctx.fillText(text, center.x, center.y);
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';
 }
 
 /**
- * The main render function. Clears and redraws the entire game canvas based on the current state.
+ * The main render function. Applies camera transforms and draws the scene.
  * @param {object} gameState The central game state object from main.js.
  */
 export function render(gameState) {
-    const { ctx, canvas, hexGrid, playerPos, exitPos, validMoves } = gameState;
-
+    const { ctx, canvas, hexGrid, playerPos, exitPos, validMoves, zoomLevel } = gameState;
     if (!ctx || !canvas) return;
     
-    // Clear the canvas for the new frame
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Determine which hexes should be visible (player, exit, and valid moves)
-    const visibleHexKeys = new Set([
-        `${playerPos.q},${playerPos.r}`,
-        `${exitPos.q},${exitPos.r}`
-    ]);
-    validMoves.forEach(move => visibleHexKeys.add(`${move.coords.q},${move.coords.r}`));
+    // --- UPDATED: CAMERA TRANSFORM ---
+    ctx.save(); // Save the default state
 
-    // Iterate over all hexes in the grid and draw them if visible
-    hexGrid.forEach((hex, key) => {
-        if (!visibleHexKeys.has(key)) {
-            return; // Skip drawing for non-visible hexes
-        }
-        
-        const pixel = axialToPixel(canvas, hex.coords);
-        
-        // Determine hex color and text based on its properties
-        let hexColor = '#004466'; // Default color
+    // 1. Move canvas origin to the center of the screen.
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+
+    // 2. Apply the zoom level.
+    ctx.scale(zoomLevel, zoomLevel);
+
+    // 3. Pan the camera to keep the player-controlled hex in the center.
+    const playerPixelPos = axialToPixel(playerPos);
+    ctx.translate(-playerPixelPos.x, -playerPixelPos.y);
+
+    // --- DRAWING LOGIC (Now happens inside the transformed context) ---
+    hexGrid.forEach((hex) => {
+        const pixel = axialToPixel(hex.coords);
+        let hexColor = '#004466';
         let textColor = '#ffffff';
         let textContent = hex.expression || '';
         
@@ -105,7 +96,7 @@ export function render(gameState) {
 
         if (isPlayer) {
             hexColor = '#00ffff';
-            textContent = ''; // Player hex has no text
+            textContent = '';
         } else if (isExit) {
             hexColor = '#ff00ff';
             textColor = '#ffaaff';
@@ -117,19 +108,19 @@ export function render(gameState) {
             textColor = '#ffff00';
             textContent = '??';
         } else if (hex.collected) {
-            hexColor = '#888800'; // Dim color for collected nodes
+            hexColor = '#888800';
             textContent = '';
+        } else {
+             // For hexes that aren't special, don't draw text.
+             textContent = '';
         }
         
-        // Pulse effect for exit hex
-        const size = isExit ? HEX_SIZE * (1 + 0.1 * Math.sin(Date.now() * 0.005)) : HEX_SIZE;
-
-        // Draw the hex outline
-        drawHex(ctx, pixel, size, hexColor, isPlayer ? 4 : 2);
+        drawHex(ctx, pixel, hexColor, isPlayer ? 4 : 2);
         
-        // Draw the text inside the hex if there is any
         if (textContent) {
-            drawGlowText(ctx, textContent, pixel.x, pixel.y, textColor, 14);
+            drawGlowText(ctx, textContent, pixel, textColor, 14);
         }
     });
-}
+
+    ctx.restore(); // Restore the context to its default state for the next frame.
+}```
