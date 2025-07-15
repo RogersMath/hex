@@ -11,6 +11,9 @@
  * @property {function(): void} onZoomOut - Callback to decrease the zoom level.
  */
 
+// CRITICAL FIX: The 'export' keyword is now correctly included.
+export const keypadOrder = [7, 8, 9, 4, 5, 6, 1, 2, 3];
+
 /**
  * Initializes all user input listeners.
  * @param {InputCallbacks} callbacks The object containing all necessary callback functions.
@@ -19,8 +22,7 @@ export function initializeInput(callbacks) {
     const keypadArea = document.getElementById('keypadArea');
     keypadArea.innerHTML = ''; // Clear any previous buttons
     
-    // MODIFIED: Generate buttons in classic numpad order.
-    const keypadOrder = [7, 8, 9, 4, 5, 6, 1, 2, 3];
+    // This now correctly uses the exported array defined above.
     keypadOrder.forEach(i => {
         const btn = document.createElement('button');
         btn.className = 'keypad-btn';
@@ -40,13 +42,11 @@ export function initializeInput(callbacks) {
 
     // Attach keyboard listener to the document
     document.addEventListener('keydown', (e) => {
-        // Handle number inputs (1-9)
         if (e.key >= '1' && e.key <= '9') {
             callbacks.onKey(parseInt(e.key, 10));
         } 
-        // Handle pause inputs (Escape or P key)
         else if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
-            e.preventDefault(); // Prevents default browser actions
+            e.preventDefault();
             callbacks.onPause();
         }
     });
