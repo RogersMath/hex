@@ -4,6 +4,17 @@ const HEX_SIZE = 35; // Defines the visual size of a hex.
 const BASE_GRID_RADIUS = 3; // The starting radius of the map.
 
 /**
+ * Converts axial hex coordinates to raw pixel coordinates (without camera adjustments).
+ * @param {object} coords The axial coordinates { q, r }.
+ * @returns {object} The raw pixel coordinates { x, y }.
+ */
+export function axialToPixel({ q, r }) {
+    const x = HEX_SIZE * (1.5 * q);
+    const y = HEX_SIZE * (Math.sqrt(3) / 2 * q + Math.sqrt(3) * r);
+    return { x, y };
+}
+
+/**
  * Calculates the Euclidean distance between two hexes.
  * @param {object} a The first hex coordinates { q, r }.
  * @param {object} b The second hex coordinates { q, r }.
