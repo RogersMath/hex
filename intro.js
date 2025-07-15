@@ -199,11 +199,11 @@ export function showIntro(onStart) {
 
         const startButton = document.createElement('button');
         startButton.className = 'intro-button';
-        startButton.textContent = '[Start Game]';
+        startButton.textContent = 'Start Game';
 
         const teachButton = document.createElement('button');
         teachButton.className = 'intro-button';
-        teachButton.textContent = '[Teach Me to Code Games Like This]';
+        teachButton.textContent = 'Teach Me to Code Games Like This';
         
         dialogBox.append(prompt, teachButton, startButton);
         container.appendChild(dialogBox);
