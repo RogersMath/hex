@@ -2,10 +2,10 @@
 
 import { axialToPixel } from './map.js';
 
-const HEX_SIZE = 35; // The base size of the hexagons remains constant.
+const HEX_SIZE = 35;
 
 /**
- * NEW: Draws the background particle system.
+ * Draws the background particle system.
  * @param {CanvasRenderingContext2D} ctx The canvas rendering context.
  * @param {Array<object>} particles The array of particle objects.
  */
@@ -14,7 +14,7 @@ function drawParticles(ctx, particles) {
     particles.forEach(p => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 255, 255, ${p.life * 0.5})`; // Particles are faint
+        ctx.fillStyle = `rgba(0, 255, 255, ${p.life * 0.5})`;
         ctx.shadowColor = '#00ffff';
         ctx.shadowBlur = 5;
         ctx.fill();
@@ -24,7 +24,6 @@ function drawParticles(ctx, particles) {
 
 /**
  * Draws a single hexagon outline on the canvas.
- * MODIFIED: Now accepts a dynamic 'size' parameter for pulsing effects.
  * @param {CanvasRenderingContext2D} ctx The canvas rendering context.
  * @param {object} center The center pixel coordinate { x, y }.
  * @param {number} size The current radius of the hex.
@@ -34,7 +33,7 @@ function drawParticles(ctx, particles) {
 function drawHex(ctx, center, size, color, lineWidth = 2) {
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
-        const angle = (Math.PI / 3) * i;
+        const angle = (Math.PI / 3) * i + Math.PI / 6; // Rotated for flat top
         const x = center.x + size * Math.cos(angle);
         const y = center.y + size * Math.sin(angle);
         if (i === 0) {
@@ -58,7 +57,9 @@ function drawHex(ctx, center, size, color, lineWidth = 2) {
  * @param {number} size The font size.
  */
 function drawGlowText(ctx, text, center, color, size = 16) {
-    ctx.font = `bold ${size}px 'Courier New'`;
+    // CRITICAL FIX: Changed 'Courier New' to 'Orbitron' to match the rest of the game.
+    // We must specify 'bold' to match the bold version of the font file.
+    ctx.font = `bold ${size}px 'Orbitron'`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.shadowColor = color;
@@ -76,23 +77,16 @@ function drawGlowText(ctx, text, center, color, size = 16) {
 export function render(gameState) {
     const { ctx, canvas, hexGrid, playerPos, exitPos, validMoves, zoomLevel, particles } = gameState;
     if (!ctx || !canvas) return;
-    
-    // The render function now operates in two coordinate spaces:
-    // 1. Screen space (for particles, UI) - before the save/transform
-    // 2. World space (for the hex grid) - after the save/transform
 
-    // Clear and draw background particles in SCREEN SPACE
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawParticles(ctx, particles);
     
-    // Switch to WORLD SPACE for drawing the game grid
     ctx.save();
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.scale(zoomLevel, zoomLevel);
     const playerPixelPos = axialToPixel(playerPos);
     ctx.translate(-playerPixelPos.x, -playerPixelPos.y);
 
-    // --- DRAWING LOGIC (Now happens inside the transformed context) ---
     hexGrid.forEach((hex) => {
         const pixel = axialToPixel(hex.coords);
         let hexColor = '#004466';
@@ -108,14 +102,12 @@ export function render(gameState) {
             hexColor = '#00ffff';
             textContent = '';
         } else if (isExit) {
-            // NEW: Exit hex pulsing effect
             const pulse = 1 + 0.1 * Math.sin(Date.now() * 0.008);
             currentHexSize = HEX_SIZE * pulse;
             hexColor = '#ff00ff';
             textColor = '#ffaaff';
             textContent = 'EXIT';
         } else if (isValidMove) {
-            // NEW: Valid move pulsing effect
             const pulse = 1 + 0.05 * Math.sin(Date.now() * 0.005);
             currentHexSize = HEX_SIZE * pulse;
             hexColor = '#00ff7f';
@@ -130,7 +122,6 @@ export function render(gameState) {
              textContent = '';
         }
         
-        // MODIFIED: Pass the dynamic hex size to the draw function
         drawHex(ctx, pixel, currentHexSize, hexColor, isPlayer ? 4 : 2);
         
         if (textContent) {
@@ -138,5 +129,5 @@ export function render(gameState) {
         }
     });
 
-    ctx.restore(); // Restore the context, returning to SCREEN SPACE for any potential UI drawing
+    ctx.restore();
 }
