@@ -1,6 +1,6 @@
-// main.js - The updated entry point and central controller for the game.
+// main.js - The entry point and central controller for the game.
 
-import { initializeInput, keypadOrder } from './input.js'; // This line will now work correctly.
+import { initializeInput, keypadOrder } from './input.js';
 import { initAudio, playTone } from './audio.js';
 import { generateMaze, getHexNeighbors } from './map.js';
 import { updateValidMoves, handleMove } from './movement.js';
@@ -32,7 +32,7 @@ const gameState = {
     particles: [],
 };
 
-// --- Particle logic (unchanged) ---
+// --- Particle System Logic ---
 function createParticle() {
     return {
         x: gameState.canvas ? Math.random() * gameState.canvas.width : 0,
@@ -44,8 +44,7 @@ function createParticle() {
     };
 }
 function initializeParticles() {
-    const particleCount = 100;
-    for (let i = 0; i < particleCount; i++) {
+    for (let i = 0; i < 100; i++) {
         gameState.particles.push(createParticle());
     }
 }
@@ -67,7 +66,7 @@ function updateParticles() {
     }
 }
 
-// --- Zoom logic (unchanged) ---
+// --- Zoom Logic ---
 function setZoom(newZoom) {
     gameState.zoomLevel = Math.max(0.5, Math.min(newZoom, 3.0));
 }
@@ -92,7 +91,7 @@ function togglePause() {
     } else {
         gameState.totalPausedTime += Date.now() - gameState.pauseTime;
         pauseScreen.style.display = 'none';
-        requestAnimationFrame(mainRenderLoop);
+        requestAnimationFrame(mainRenderLoop); // Resume the loop
     }
 }
 
@@ -116,6 +115,7 @@ function updateUI() {
     
     document.getElementById('zoomLevelDisplay').textContent = `${Math.round(gameState.zoomLevel * 100)}%`;
 
+    // Highlight valid moves on the keypad
     keypadOrder.forEach(number => {
         const btn = document.getElementById(`key-${number}`);
         if (btn) {
@@ -134,11 +134,13 @@ function levelEnd() {
     gameState.sumOfPerformanceScores += roundPerf;
     gameState.levelsCompleted++; 
 
+    // Show performance rating briefly
     const perfEl = document.getElementById('roundPerformance');
     perfEl.textContent = `PERF: ${Math.floor(roundPerf)}%`;
     perfEl.style.opacity = 1;
     setTimeout(() => { perfEl.style.opacity = 0; }, 2000);
     
+    // Transition to the narrative screen
     setTimeout(() => { showNarrativeScreen(gameController); }, 2500);
 }
 
@@ -152,6 +154,7 @@ function startNextLevel() {
     mainRenderLoop();
 }
 
+// A central object passed to other modules to avoid circular dependencies
 const gameController = {
     gameState,
     updateUI,
@@ -165,14 +168,26 @@ const gameController = {
 function initializeGame() {
     gameState.canvas = document.getElementById('gameCanvas');
     gameState.ctx = gameState.canvas.getContext('2d');
+
+    // CRITICAL FIX: This resize handler correctly sizes the canvas on all devices.
     const resizeCanvas = () => {
-        gameState.canvas.width = gameState.canvas.offsetWidth;
-        gameState.canvas.height = gameState.canvas.offsetHeight;
+        // We measure the container, not the canvas, because its size is more stable
+        // during the page's render cycle, preventing race conditions on mobile.
+        const container = document.getElementById('gameCanvasContainer');
+        if (container) {
+            gameState.canvas.width = container.offsetWidth;
+            gameState.canvas.height = container.offsetHeight;
+        }
+        // If the game is already running, redraw immediately to avoid visual glitches.
         if (gameState.gameRunning) render(gameState);
-    }
+    };
+
     window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+    resizeCanvas(); // Initial size setup
+
     initializeParticles();
+
+    // Set up all event listeners
     initializeInput({
         onKey: (number) => handleMove(number, gameController),
         onPause: togglePause,
@@ -180,8 +195,10 @@ function initializeGame() {
         onZoomIn: zoomIn,
         onZoomOut: zoomOut,
     });
+
     updateUI();
-    showNarrativeScreen(gameController);
+    showNarrativeScreen(gameController); // Start with the first narrative scene
 }
 
+// Let's go!
 initializeGame();
