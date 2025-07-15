@@ -7,44 +7,53 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- NEW: Main application container for flexbox layout -->
     <div id="appContainer">
         
-        <!-- This container will grow to fill available space -->
         <div id="gameCanvasContainer">
             <canvas id="gameCanvas"></canvas>
             <div id="roundPerformance"></div>
         </div>
 
-        <!-- NEW: This is the fixed-height bottom panel for all UI -->
         <div id="bottomUIPanel">
-            <!-- Keypad now takes up the left 60% of the bottom panel -->
             <div id="keypadArea"></div>
 
-            <!-- NEW: This holds the right 40% of the UI -->
+            <!-- MODIFIED: The info panel is now a container for 6 grid items -->
             <div id="infoAndControls">
-                <!-- MOVED: All the UI text and buttons from the old #gameUI are now here -->
-                <div class="ui-text">Level: <span id="level">1</span></div>
-                <div class="ui-text">Fragments: <span id="fragments">0</span></div>
-                <div class="ui-text">Avg Perf: <span id="avgPerf">--</span>%</div>
-                
-                <div class="zoom-controls">
-                    <button id="zoomOutBtn" class="zoom-btn">-</button>
-                    <span class="ui-text" id="zoomLevelDisplay">100%</span>
-                    <button id="zoomInBtn" class="zoom-btn">+</button>
+                <!-- Each item is wrapped in an "info-box" for grid styling -->
+                <div class="info-box">
+                    <span class="info-label">Level</span>
+                    <span id="level">1</span>
                 </div>
-
-                <div class="volume-control">
-                    <span style="font-size: 0.8rem;">♪</span>
-                    <input type="range" class="volume-slider" min="0" max="100" value="30" id="volumeSlider">
+                <div class="info-box">
+                    <span class="info-label">Fragments</span>
+                    <span id="fragments">0</span>
                 </div>
-
-                <button class="pause-btn" id="pauseBtn">⏸ PAUSE</button>
+                <div class="info-box">
+                    <span class="info-label">Avg Perf</span>
+                    <span id="avgPerf">--</span>
+                </div>
+                <div class="info-box">
+                    <span class="info-label">Zoom</span>
+                    <div id="zoomControls" class="control-group">
+                        <button id="zoomOutBtn" class="zoom-btn">-</button>
+                        <span id="zoomLevelDisplay">100%</span>
+                        <button id="zoomInBtn" class="zoom-btn">+</button>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span class="info-label">Volume</span>
+                    <div id="volumeControls" class="control-group">
+                        <span style="font-size: 1.2rem;">♪</span>
+                        <input type="range" class="volume-slider" min="0" max="100" value="30" id="volumeSlider">
+                    </div>
+                </div>
+                <!-- The pause button now also gets the info-box class to fit the grid -->
+                <button class="pause-btn info-box" id="pauseBtn">⏸ PAUSE</button>
             </div>
         </div>
     </div>
 
-    <!-- The overlay screens remain at the top level, unchanged -->
+    <!-- Overlays are unchanged -->
     <div id="pauseScreen">
         <div class="pause-instructions">
             <h3>⬡ GAME PAUSED ⬡</h3>
