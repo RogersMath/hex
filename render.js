@@ -33,7 +33,9 @@ function drawParticles(ctx, particles) {
 function drawHex(ctx, center, size, color, lineWidth = 2) {
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
-        const angle = (Math.PI / 3) * i + Math.PI / 6; // Rotated for flat top
+        // CRITICAL FIX: Reverted to the original angle calculation.
+        // This restores the flat-top orientation that connects correctly with the grid math.
+        const angle = (Math.PI / 3) * i;
         const x = center.x + size * Math.cos(angle);
         const y = center.y + size * Math.sin(angle);
         if (i === 0) {
@@ -57,8 +59,6 @@ function drawHex(ctx, center, size, color, lineWidth = 2) {
  * @param {number} size The font size.
  */
 function drawGlowText(ctx, text, center, color, size = 16) {
-    // CRITICAL FIX: Changed 'Courier New' to 'Orbitron' to match the rest of the game.
-    // We must specify 'bold' to match the bold version of the font file.
     ctx.font = `bold ${size}px 'Orbitron'`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
