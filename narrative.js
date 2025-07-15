@@ -1,5 +1,6 @@
 // narrative.js - Manages the story progression, choices, and endings.
 
+// Narrative text including the implemented closed loop for the neutral ending.
 const narrativeEngine = [
     {
         prompt: "You awaken inside a disorienting digital space. You have no memories, and can sense almost nothing, other than a sterile lab smell filling your lungs. There is only your steady heartbeat and digital rain.\n\nA primal urge conflicts with curiosity. The structure of the maze seems to beckon you forward, promising a strange form of safety in its logic. Yet, the black void of your memory screams to be acknowledged.",
@@ -45,10 +46,6 @@ const narrativeEngine = [
     }
 ];
 
-/**
- * Displays the narrative screen for the current level or triggers the end game.
- * @param {object} gameController The central game controller from main.js.
- */
 export function showNarrativeScreen(gameController) {
     const { gameState, startNextLevel, endGame } = gameController;
     const { level } = gameState;
@@ -70,7 +67,7 @@ export function showNarrativeScreen(gameController) {
             btn.className = 'choice-btn';
             btn.textContent = choice.text;
             btn.onclick = () => {
-                choice.action(gameState); // Pass gameState to the action.
+                choice.action(gameState);
                 screen.style.display = 'none';
                 gameState.level++;
                 startNextLevel();
@@ -79,7 +76,6 @@ export function showNarrativeScreen(gameController) {
         });
 
     } else {
-        // If there are no more narrative scenes, end the game.
         endGame(gameController);
         return;
     }
@@ -87,10 +83,6 @@ export function showNarrativeScreen(gameController) {
     screen.style.display = 'flex';
 }
 
-/**
- * Calculates and displays the final game ending based on player performance.
- * @param {object} gameController The central game controller from main.js.
- */
 export function endGame(gameController) {
     const { gameState } = gameController;
     const screen = document.getElementById('narrativeScreen');
@@ -99,12 +91,17 @@ export function endGame(gameController) {
     const choiceContainer = document.getElementById('choiceContainer');
     choiceContainer.innerHTML = '';
     
-    const finalPerf = Math.round(gameState.totalPerformanceScore) + gameState.performanceRating;
+    // MODIFIED: Calculate final performance using the corrected method.
+    const levelsCompleted = gameState.level - 1;
+    let finalAvgPerf = 0;
+    if (levelsCompleted > 0) {
+        finalAvgPerf = gameState.sumOfPerformanceScores / levelsCompleted;
+    }
+    const finalPerf = Math.round(finalAvgPerf) + gameState.performanceRating;
     const finalFrags = gameState.dataFragments + gameState.dataFragmentBonus;
     let endText = '';
     let endDialogue = '';
 
-    // Determine ending based on performance and fragments collected.
     if (finalPerf >= 75 && finalFrags < 3) {
         endText = "The Observer: \"Remarkable. The integration is flawless. The old personality is completely suppressed. Cognitive and strategic functions are operating at 3700% of normal human baseline. Advanced cryptographics present as little more than simple arithmetic to the subject.\"\n\nThe Operator: \"Welcome to the Syndicate, Asset. Your training is complete. The protocol is a success. You have a most... exciting career ahead of you.\"";
         endDialogue = "You feel no fear, no memory of your past self. Only purpose. You are a weapon, and you are ready.";
@@ -113,7 +110,7 @@ export function endGame(gameController) {
         endDialogue = "The sterile white light is brutally replaced by the sight of a cracked ceiling. The scent of antiseptic is gone. You are in a real bed, wearing a straitjacket. You scream about the mazes, the voices... but they just shake their heads and write on a chart, \"Subject remains delusional.\"";
     } else {
         endText = "The Observer: \"There are... anomalies. Trace elements of the original personality remain. Performance is high, but the asset is contaminated.\"\n\nThe Operator: \"The asset is too valuable to terminate. A recalibration is required. Initiating memory wipe and protocol regression. We will begin another cycle.\"";
-        endDialogue = "A crushing sense of déjà vu washes over you, but you can't quite remember anything. You notice the faint sound of a heartbeat and digital rain. A woman's voice greets you. \"Welcome. You are safe...\"";
+        endDialogue = "A crushing sense of déjà vu washes over you as the world dissolves. You awaken inside a disorienting digital space. You have no memories...";
     }
     
     textEl.textContent = endText;
@@ -123,7 +120,7 @@ export function endGame(gameController) {
     restartBtn.className = 'choice-btn';
     restartBtn.textContent = '[RESTART PROTOCOL]';
     restartBtn.onclick = () => {
-        location.reload(); // The simplest way to restart the game.
+        location.reload();
     };
     choiceContainer.appendChild(restartBtn);
     
