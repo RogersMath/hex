@@ -7,28 +7,44 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
-        <div id="gameUI">
-            <div class="ui-text">Level: <span id="level">1</span></div>
-            <div class="ui-text">Fragments: <span id="fragments">0</span></div>
-            <div class="ui-text">Avg Perf: <span id="avgPerf">--</span>%</div>
-            <button class="pause-btn" id="pauseBtn">⏸ PAUSE</button>
-            <div class="volume-control">
-                <span style="font-size: 0.8rem;">♪</span>
-                <input type="range" class="volume-slider" min="0" max="100" value="30" id="volumeSlider">
-            </div>
-            <!-- NEW: Zoom Controls -->
-            <div class="zoom-controls">
-                <button id="zoomOutBtn" class="zoom-btn">-</button>
-                <span class="ui-text" id="zoomLevelDisplay">100%</span>
-                <button id="zoomInBtn" class="zoom-btn">+</button>
+    <!-- NEW: Main application container for flexbox layout -->
+    <div id="appContainer">
+        
+        <!-- This container will grow to fill available space -->
+        <div id="gameCanvasContainer">
+            <canvas id="gameCanvas"></canvas>
+            <div id="roundPerformance"></div>
+        </div>
+
+        <!-- NEW: This is the fixed-height bottom panel for all UI -->
+        <div id="bottomUIPanel">
+            <!-- Keypad now takes up the left 60% of the bottom panel -->
+            <div id="keypadArea"></div>
+
+            <!-- NEW: This holds the right 40% of the UI -->
+            <div id="infoAndControls">
+                <!-- MOVED: All the UI text and buttons from the old #gameUI are now here -->
+                <div class="ui-text">Level: <span id="level">1</span></div>
+                <div class="ui-text">Fragments: <span id="fragments">0</span></div>
+                <div class="ui-text">Avg Perf: <span id="avgPerf">--</span>%</div>
+                
+                <div class="zoom-controls">
+                    <button id="zoomOutBtn" class="zoom-btn">-</button>
+                    <span class="ui-text" id="zoomLevelDisplay">100%</span>
+                    <button id="zoomInBtn" class="zoom-btn">+</button>
+                </div>
+
+                <div class="volume-control">
+                    <span style="font-size: 0.8rem;">♪</span>
+                    <input type="range" class="volume-slider" min="0" max="100" value="30" id="volumeSlider">
+                </div>
+
+                <button class="pause-btn" id="pauseBtn">⏸ PAUSE</button>
             </div>
         </div>
-        <div id="roundPerformance"></div>
     </div>
 
-    <!-- The rest of the HTML is unchanged -->
+    <!-- The overlay screens remain at the top level, unchanged -->
     <div id="pauseScreen">
         <div class="pause-instructions">
             <h3>⬡ GAME PAUSED ⬡</h3>
@@ -43,7 +59,6 @@
         </div>
         <button class="resume-btn" id="resumeBtn">⚡ RESUME GAME ⚡</button>
     </div>
-    <div id="keypadArea"></div>
     <div id="narrativeScreen">
         <div class="narrative-content">
             <p id="narrativeText"></p>
