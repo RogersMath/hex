@@ -6,8 +6,6 @@
     box-sizing: border-box;
 }
 
-/* CRITICAL FIX: Establish a solid full-viewport foundation for all other elements. */
-/* Using vw/vh units on the root element is the most reliable way to fill the screen. */
 html {
     width: 100vw;
     height: 100vh;
@@ -18,8 +16,8 @@ body {
     background: #000;
     color: #00ffff;
     overflow: hidden;
-    height: 100%; /* Now inherits the 100vh from the html tag */
-    width: 100%;  /* Now inherits the 100vw from the html tag */
+    height: 100%;
+    width: 100%;
     letter-spacing: 1px;
 }
 
@@ -47,7 +45,7 @@ body {
 
 /* === Bottom UI Panel Layout === */
 #bottomUIPanel {
-    height: 40vh; /* Dedicate bottom 40% of screen height */
+    height: 40vh;
     flex-shrink: 0;
     display: flex;   
     flex-direction: row;
@@ -56,6 +54,8 @@ body {
     box-shadow: 0 -10px 30px rgba(0, 255, 255, 0.3);
     padding: 2vh;
     gap: 2vh;
+    /* FIX: Prevent text selection on all UI elements */
+    user-select: none;
 }
 
 #keypadArea {
@@ -91,7 +91,7 @@ body {
     padding: 10px;
     text-shadow: 0 0 10px #00ffff;
     box-shadow: 0 0 10px rgba(0, 255, 255, 0.2), inset 0 0 10px rgba(0, 255, 255, 0.05);
-    font-size: clamp(1.2rem, 4vh, 2rem); /* Font size scales with viewport height */
+    font-size: clamp(1.2rem, 4vh, 2rem);
 }
 
 .info-label {
@@ -124,7 +124,10 @@ body {
     justify-content: center;
     text-shadow: 0 0 10px #00ffff;
     box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 255, 255, 0.1);
-    user-select: none;
+    
+    /* FIX: Force the button to conform to its grid cell size for a stable layout */
+    width: 100%;
+    height: 100%;
 }
 
 .keypad-btn:hover {
@@ -213,7 +216,6 @@ body {
     pointer-events: none;
 }
 
-/* The full-screen overlays now inherit from the stable body/html size */
 #pauseScreen, #narrativeScreen {
     position: absolute;
     top: 0;
@@ -230,6 +232,8 @@ body {
     z-index: 200;
     padding: 20px;
     backdrop-filter: blur(10px);
+    /* FIX: Prevent text selection on overlays */
+    user-select: none;
 }
 
 #narrativeScreen {
@@ -296,7 +300,7 @@ body {
     font-size: clamp(1rem, 3vw, 1.3rem);
     line-height: 1.7;
     text-shadow: 0 0 8px #ff88ff;
-    white-space: pre-wrap; /* Preserves line breaks from the narrative strings */
+    white-space: pre-wrap;
 }
 
 #finalText {
