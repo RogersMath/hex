@@ -113,7 +113,7 @@ export function endGame(gameController) {
         endDialogue = "The sterile white light is brutally replaced by the sight of a cracked ceiling. The scent of antiseptic is gone. You are in a real bed, wearing a straitjacket. You scream about the mazes, the voices... but they just shake their heads and write on a chart, \"Subject remains delusional.\"";
     } else {
         endText = "The Observer: \"There are... anomalies. Trace elements of the original personality remain. Performance is high, but the asset is contaminated.\"\n\nThe Operator: \"The asset is too valuable to terminate. A recalibration is required. Initiating memory wipe and protocol regression. We will begin another cycle.\"";
-        endDialogue = "A crushing sense of déjà vu washes over you. The faint sound of a heartbeat and digital rain begins to fade back in. The world dissolves into the familiar blue lines of the very first maze you solved.";
+        endDialogue = "A crushing sense of déjà vu washes over you, but you can't quite remember anything. You notice the faint sound of a heartbeat and digital rain. A woman's voice greets you. \"Welcome. You are safe...\"";
     }
     
     textEl.textContent = endText;
