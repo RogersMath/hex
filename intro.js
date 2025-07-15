@@ -1,8 +1,5 @@
 // intro.js - A self-contained, promise-based intro/title screen module.
 
-/**
- * Injects the necessary CSS for the intro screen into the document's head.
- */
 function injectCSS() {
     if (document.getElementById('intro-styles')) return;
 
@@ -17,14 +14,25 @@ function injectCSS() {
             justify-content: center;
             font-family: 'Courier New', Courier, monospace;
             z-index: 1000;
-            padding: 20px;
+        }
+        /* NEW: A styled box for the initial dialog */
+        .intro-dialog-box {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.05), rgba(191, 0, 255, 0.05));
+            border: 2px solid #ff00ff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 25px rgba(255, 0, 255, 0.4), inset 0 0 20px rgba(255, 0, 255, 0.1);
+            max-width: 90vw;
+            width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         .intro-prompt {
-            max-width: 600px;
             text-align: center;
             font-size: 1.2rem;
             line-height: 1.6;
-            margin-bottom: 40px;
+            margin-bottom: 30px; /* Spacing between text and buttons */
             color: #00ffff;
             text-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
         }
@@ -36,16 +44,16 @@ function injectCSS() {
             font-size: 1.1rem;
             font-weight: bold;
             padding: 15px 30px;
-            margin: 10px;
+            margin-top: 15px; /* Spacing between buttons */
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 0 15px rgba(255, 0, 255, 0.5);
+            width: 100%; /* Make buttons full-width of the dialog box */
         }
         .intro-button:hover {
             background: rgba(255, 0, 255, 0.1);
             color: #fff;
-            box-shadow: 0 0 25px rgba(255, 0, 255, 0.8);
-            transform: scale(1.05);
+            transform: scale(1.02);
         }
         .intro-hex-container {
             position: relative;
@@ -56,7 +64,6 @@ function injectCSS() {
             justify-content: center;
         }
         .intro-hex-svg {
-            /* MODIFIED: Increased size for better text fit */
             width: 75vw;
             max-width: 600px;
             filter: drop-shadow(0 0 15px #ff00ff) drop-shadow(0 0 25px #ff00ff);
@@ -64,36 +71,27 @@ function injectCSS() {
         }
         .intro-hex-path {
             stroke: #ff00ff;
-            stroke-width: 4; /* Slightly thinner for a cleaner look */
+            stroke-width: 4;
             fill: none;
         }
         .intro-text-anim {
+            /* CRITICAL FIX: Robust centering for absolutely positioned elements */
             position: absolute;
-            font-size: clamp(2rem, 8vw, 4.5rem); /* Larger font size */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%; /* Ensure the container has width to center text within */
+            text-align: center; /* Center the text inside the container */
+            font-size: clamp(2rem, 8vw, 4.5rem);
             font-weight: bold;
             opacity: 0;
             transition: opacity 1.5s ease-in-out;
         }
-        .intro-text-anim.fade-in {
-            opacity: 1;
-        }
-
-        /* NEW: Styles for the HEXIT letter-by-letter animation */
-        .letter {
-            /* This transition is key: it will animate color and opacity changes smoothly */
-            transition: color 1.5s ease-in-out, opacity 1.5s ease-in-out;
-        }
-        .green {
-            color: #00ff7f;
-            text-shadow: 0 0 8px #00ff7f;
-        }
-        .purple {
-            color: #ff88ff;
-            text-shadow: 0 0 8px #ff88ff;
-        }
-        .transparent {
-            opacity: 0;
-        }
+        .intro-text-anim.fade-in { opacity: 1; }
+        .letter { transition: color 1.5s ease-in-out, opacity 1.5s ease-in-out; }
+        .green { color: #00ff7f; text-shadow: 0 0 8px #00ff7f; }
+        .purple { color: #ff88ff; text-shadow: 0 0 8px #ff88ff; }
+        .transparent { opacity: 0; }
     `;
 
     const styleSheet = document.createElement("style");
@@ -186,9 +184,14 @@ export function showIntro(onStart) {
         const container = document.createElement('div');
         container.id = 'introContainer';
 
+        // NEW: Create the dialog box wrapper
+        const dialogBox = document.createElement('div');
+        dialogBox.className = 'intro-dialog-box';
+
         const prompt = document.createElement('p');
         prompt.className = 'intro-prompt';
-        prompt.textContent = "We can teach you to code if you're already strong in math. If not, welcome. You've come to the right place, and your journey begins now.";
+        // Use the new, better hook text
+        prompt.textContent = "Already strong in math? Let us teach you to code. Otherwise, start the game to build your foundation.";
 
         const startButton = document.createElement('button');
         startButton.className = 'intro-button';
@@ -198,7 +201,9 @@ export function showIntro(onStart) {
         teachButton.className = 'intro-button';
         teachButton.textContent = '[Teach Me to Code Games Like This]';
         
-        container.append(prompt, startButton, teachButton);
+        // Append elements to the new dialog box
+        dialogBox.append(prompt, teachButton, startButton);
+        container.appendChild(dialogBox);
         document.body.appendChild(container);
         
         teachButton.onclick = () => {
@@ -209,6 +214,8 @@ export function showIntro(onStart) {
         startButton.onclick = async () => {
             if (onStart) onStart();
             
+            // For the animation, we replace the dialog with the hex animation container
+            container.innerHTML = ''; // Clear the dialog box
             await runAnimation(container);
             
             document.body.removeChild(container);
