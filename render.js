@@ -5,19 +5,38 @@ import { axialToPixel } from './map.js';
 const HEX_SIZE = 35; // The base size of the hexagons remains constant.
 
 /**
+ * NEW: Draws the background particle system.
+ * @param {CanvasRenderingContext2D} ctx The canvas rendering context.
+ * @param {Array<object>} particles The array of particle objects.
+ */
+function drawParticles(ctx, particles) {
+    ctx.save();
+    particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(0, 255, 255, ${p.life * 0.5})`; // Particles are faint
+        ctx.shadowColor = '#00ffff';
+        ctx.shadowBlur = 5;
+        ctx.fill();
+    });
+    ctx.restore();
+}
+
+/**
  * Draws a single hexagon outline on the canvas.
- * Its size is constant; the canvas scale handles the visual size.
+ * MODIFIED: Now accepts a dynamic 'size' parameter for pulsing effects.
  * @param {CanvasRenderingContext2D} ctx The canvas rendering context.
  * @param {object} center The center pixel coordinate { x, y }.
+ * @param {number} size The current radius of the hex.
  * @param {string} color The stroke color.
  * @param {number} lineWidth The width of the outline.
  */
-function drawHex(ctx, center, color, lineWidth = 2) {
+function drawHex(ctx, center, size, color, lineWidth = 2) {
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
         const angle = (Math.PI / 3) * i;
-        const x = center.x + HEX_SIZE * Math.cos(angle);
-        const y = center.y + HEX_SIZE * Math.sin(angle);
+        const x = center.x + size * Math.cos(angle);
+        const y = center.y + size * Math.sin(angle);
         if (i === 0) {
             ctx.moveTo(x, y);
         } else {
@@ -26,8 +45,7 @@ function drawHex(ctx, center, color, lineWidth = 2) {
     }
     ctx.closePath();
     ctx.strokeStyle = color;
-    // UPDATED: Adjust line width based on zoom so it doesn't get too thick/thin.
-    ctx.lineWidth = lineWidth / ctx.getTransform().a; // .a is the horizontal scale
+    ctx.lineWidth = lineWidth / ctx.getTransform().a;
     ctx.stroke();
 }
 
@@ -56,21 +74,21 @@ function drawGlowText(ctx, text, center, color, size = 16) {
  * @param {object} gameState The central game state object from main.js.
  */
 export function render(gameState) {
-    const { ctx, canvas, hexGrid, playerPos, exitPos, validMoves, zoomLevel } = gameState;
+    const { ctx, canvas, hexGrid, playerPos, exitPos, validMoves, zoomLevel, particles } = gameState;
     if (!ctx || !canvas) return;
     
+    // The render function now operates in two coordinate spaces:
+    // 1. Screen space (for particles, UI) - before the save/transform
+    // 2. World space (for the hex grid) - after the save/transform
+
+    // Clear and draw background particles in SCREEN SPACE
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawParticles(ctx, particles);
     
-    // --- UPDATED: CAMERA TRANSFORM ---
-    ctx.save(); // Save the default state
-
-    // 1. Move canvas origin to the center of the screen.
+    // Switch to WORLD SPACE for drawing the game grid
+    ctx.save();
     ctx.translate(canvas.width / 2, canvas.height / 2);
-
-    // 2. Apply the zoom level.
     ctx.scale(zoomLevel, zoomLevel);
-
-    // 3. Pan the camera to keep the player-controlled hex in the center.
     const playerPixelPos = axialToPixel(playerPos);
     ctx.translate(-playerPixelPos.x, -playerPixelPos.y);
 
@@ -80,6 +98,7 @@ export function render(gameState) {
         let hexColor = '#004466';
         let textColor = '#ffffff';
         let textContent = hex.expression || '';
+        let currentHexSize = HEX_SIZE;
         
         const isPlayer = (hex.coords.q === playerPos.q && hex.coords.r === playerPos.r);
         const isExit = (hex.type === 'exit');
@@ -89,10 +108,16 @@ export function render(gameState) {
             hexColor = '#00ffff';
             textContent = '';
         } else if (isExit) {
+            // NEW: Exit hex pulsing effect
+            const pulse = 1 + 0.1 * Math.sin(Date.now() * 0.008);
+            currentHexSize = HEX_SIZE * pulse;
             hexColor = '#ff00ff';
             textColor = '#ffaaff';
             textContent = 'EXIT';
         } else if (isValidMove) {
+            // NEW: Valid move pulsing effect
+            const pulse = 1 + 0.05 * Math.sin(Date.now() * 0.005);
+            currentHexSize = HEX_SIZE * pulse;
             hexColor = '#00ff7f';
         } else if (hex.type === 'data' && !hex.collected) {
             hexColor = '#ffff00';
@@ -102,16 +127,16 @@ export function render(gameState) {
             hexColor = '#888800';
             textContent = '';
         } else {
-             // For hexes that aren't special, don't draw text.
              textContent = '';
         }
         
-        drawHex(ctx, pixel, hexColor, isPlayer ? 4 : 2);
+        // MODIFIED: Pass the dynamic hex size to the draw function
+        drawHex(ctx, pixel, currentHexSize, hexColor, isPlayer ? 4 : 2);
         
         if (textContent) {
             drawGlowText(ctx, textContent, pixel, textColor, 14);
         }
     });
 
-    ctx.restore(); // Restore the context to its default state for the next frame.
+    ctx.restore(); // Restore the context, returning to SCREEN SPACE for any potential UI drawing
 }
