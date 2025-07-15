@@ -7,26 +7,24 @@ let masterGain;
 
 /**
  * Initializes the Web Audio API context. Must be called after a user interaction.
+ * This function no longer starts the music automatically.
  */
-export async function initAudio() {
+export function initAudio() {
     if (audioContext) return; // Prevent re-initialization
     try {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         
-        // Create a master gain node for global volume control
         masterGain = audioContext.createGain();
-        masterGain.gain.value = 0.3; // Default volume (30%)
+        masterGain.gain.value = 0.3;
         masterGain.connect(audioContext.destination);
 
-        // Link the volume slider to the master gain node
         document.getElementById('volumeSlider').addEventListener('input', e => {
             if (masterGain) {
                 masterGain.gain.value = e.target.value / 100;
             }
         });
-
-        // Start playing the background music
-        await playBackgroundMusic();
+        
+        console.log("Audio Context Initialized.");
 
     } catch (e) {
         console.error('Web Audio API initialization failed:', e);
@@ -35,26 +33,28 @@ export async function initAudio() {
 
 /**
  * Fetches, generates, and plays the looping background music.
+ * CRITICAL FIX: The 'export' keyword makes this function available to other files like main.js.
  */
-async function playBackgroundMusic() {
-    if (!audioContext) return;
+export async function playBackgroundMusic() {
+    if (!audioContext) {
+        console.error("Audio not initialized. Cannot play music.");
+        return;
+    }
     try {
-        // Fetch the song data from the JSON file
         const response = await fetch('music.json');
         if (!response.ok) {
             throw new Error(`Failed to fetch music.json: ${response.statusText}`);
         }
         const songData = await response.json();
         
-        // Generate the audio buffer using the SonantX engine
         const buffer = await generateSong(songData, audioContext.sampleRate);
         
-        // Create a buffer source to play the song
         const bufferSource = audioContext.createBufferSource();
         bufferSource.buffer = buffer;
-        bufferSource.loop = true; // Make the music loop forever
+        bufferSource.loop = true;
         bufferSource.connect(masterGain);
         bufferSource.start();
+        console.log("Background music started.");
 
     } catch (e) {
         console.error('Background music failed to load:', e);
@@ -81,8 +81,8 @@ export function playTone(freq, dur, type) {
     
     // Simple ADSR-like envelope
     gain.gain.setValueAtTime(0, audioContext.currentTime);
-    gain.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.01); // Attack
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + dur); // Decay/Release
+    gain.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + dur);
     
     osc.start(audioContext.currentTime);
     osc.stop(audioContext.currentTime + dur + 0.1);
