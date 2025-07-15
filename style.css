@@ -13,7 +13,7 @@ body {
     letter-spacing: 1px;
 }
 
-/* === NEW: Main App Layout === */
+/* === Main App Layout (Unchanged) === */
 #appContainer {
     display: flex;
     flex-direction: column;
@@ -22,7 +22,7 @@ body {
 }
 
 #gameCanvasContainer {
-    flex-grow: 1; /* This makes the canvas container take all available vertical space */
+    flex-grow: 1; 
     position: relative;
     background: radial-gradient(circle at center, #001122 0%, #000000 100%);
     overflow: hidden;
@@ -35,14 +35,13 @@ body {
     background: transparent;
 }
 
-/* === REMOVED: Old #gameUI styles are gone === */
-/* The absolute positioning is no longer needed. */
 
-/* === NEW: Bottom UI Panel Layout === */
+/* === CORRECTED: Bottom UI Panel Layout === */
 #bottomUIPanel {
-    height: 33.33vh; /* Dedicate bottom third of the screen height */
-    flex-shrink: 0;  /* Prevent this panel from shrinking */
-    display: flex;   /* Use flexbox to create the two columns */
+    height: 25vh; /* REDUCED: Take a more reasonable 25% of the screen height */
+    flex-shrink: 0;
+    display: flex;   
+    flex-direction: row; /* CRITICAL: Ensure direction is horizontal */
     background: linear-gradient(180deg, #001122 0%, #000011 100%);
     border-top: 3px solid #00ffff;
     box-shadow: 0 -10px 30px rgba(0, 255, 255, 0.3);
@@ -50,34 +49,33 @@ body {
     gap: 15px;
 }
 
-/* MODIFIED: Keypad now takes a percentage width and full height of its new parent */
 #keypadArea {
-    flex-basis: 60%; /* Take 60% of the parent panel's width */
-    height: 100%;    /* Take full height of the parent panel */
+    flex-basis: 60%; /* Take 60% of the panel's width */
+    height: 100%;    
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 15px;
 }
 
-/* NEW: Container for the right-side info and controls */
 #infoAndControls {
-    flex-basis: 40%; /* Take 40% of the parent panel's width */
+    flex-basis: 40%; /* Take 40% of the panel's width */
     height: 100%;
     border: 1px solid #004466;
     border-radius: 10px;
-    padding: 15px;
+    padding: clamp(5px, 2vh, 15px); /* Responsive padding */
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: space-around; /* Distribute items nicely */
+    align-items: center; /* Center items horizontally */
+    justify-content: space-around; /* Distribute items vertically */
     background: rgba(0,0,0,0.2);
 }
 
-/* MODIFIED: Adjusting UI text and controls for their new container */
+
+/* === MODIFIED: UI elements within the right-hand panel === */
 .ui-text {
     font-weight: 700;
     text-shadow: 0 0 8px #00ffff;
-    font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+    font-size: clamp(0.8rem, 2vh, 1.1rem); /* Font size scales with viewport height */
     text-align: center;
 }
 
@@ -87,7 +85,7 @@ body {
     border-radius: 8px;
     color: #ffff00;
     font-family: 'Courier New', monospace;
-    font-size: clamp(0.8rem, 2vw, 1rem);
+    font-size: clamp(0.8rem, 2vh, 1rem);
     font-weight: 700;
     padding: 8px 15px;
     cursor: pointer;
@@ -170,14 +168,12 @@ body {
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
 }
 
-
-/* Keypad button styles remain largely the same, just font size is clamped */
 .keypad-btn {
     background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 191, 255, 0.1));
     border: 2px solid #00ffff;
     border-radius: 15px;
     color: #00ffff;
-    font-size: clamp(2rem, 6vh, 4rem); /* Font size now scales with viewport height */
+    font-size: clamp(2rem, 8vh, 4.5rem); /* Keypad font is now larger */
     font-family: 'Courier New', Courier, monospace;
     font-weight: 900;
     cursor: pointer;
@@ -214,8 +210,7 @@ body {
 }
 
 
-/* === Overlays and Other UI === */
-/* These styles remain largely the same */
+/* === Overlays and Other UI (Unchanged) === */
 
 #roundPerformance {
     position: absolute;
@@ -278,7 +273,7 @@ body {
     border: 2px solid #00ffff;
     border-radius: 15px;
     color: #00ffff;
-    font-family: 'Courier New', monospace;
+    font-family: 'Courier New', Courier, monospace;
     font-size: 1.2rem;
     font-weight: 700;
     padding: 15px 30px;
@@ -293,7 +288,6 @@ body {
     transform: translateY(-2px) scale(1.05);
     box-shadow: 0 5px 25px rgba(0, 255, 255, 0.7);
 }
-
 
 #narrativeScreen {
     position: absolute;
