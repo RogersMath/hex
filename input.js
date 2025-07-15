@@ -16,17 +16,19 @@
  * @param {InputCallbacks} callbacks The object containing all necessary callback functions.
  */
 export function initializeInput(callbacks) {
-    // Generate the keypad buttons and attach click listeners
     const keypadArea = document.getElementById('keypadArea');
     keypadArea.innerHTML = ''; // Clear any previous buttons
-    for (let i = 1; i <= 9; i++) {
+    
+    // MODIFIED: Generate buttons in classic numpad order.
+    const keypadOrder = [7, 8, 9, 4, 5, 6, 1, 2, 3];
+    keypadOrder.forEach(i => {
         const btn = document.createElement('button');
         btn.className = 'keypad-btn';
         btn.textContent = i;
         btn.id = `key-${i}`;
         btn.onclick = () => callbacks.onKey(i);
         keypadArea.appendChild(btn);
-    }
+    });
 
     // Attach listeners to the pause/resume buttons
     document.getElementById('pauseBtn').onclick = callbacks.onPause;
@@ -50,7 +52,6 @@ export function initializeInput(callbacks) {
     });
 
     // Attach one-time listeners to the body to unlock the Web Audio API.
-    // This is required by modern browsers.
     document.body.addEventListener('click', callbacks.onAudioUnlock, { once: true });
     document.body.addEventListener('keydown', callbacks.onAudioUnlock, { once: true });
 }
