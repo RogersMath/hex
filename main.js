@@ -1,7 +1,8 @@
 // main.js - The entry point and central controller for the game.
 
+import { showIntro } from './intro.js';
 import { initializeInput, keypadOrder } from './input.js';
-import { initAudio, playTone } from './audio.js';
+import { initAudio, playBackgroundMusic, playTone } from './audio.js';
 import { generateMaze, getHexNeighbors } from './map.js';
 import { updateValidMoves, handleMove } from './movement.js';
 import { showNarrativeScreen, endGame } from './narrative.js';
@@ -91,7 +92,7 @@ function togglePause() {
     } else {
         gameState.totalPausedTime += Date.now() - gameState.pauseTime;
         pauseScreen.style.display = 'none';
-        requestAnimationFrame(mainRenderLoop); // Resume the loop
+        requestAnimationFrame(mainRenderLoop);
     }
 }
 
@@ -115,7 +116,6 @@ function updateUI() {
     
     document.getElementById('zoomLevelDisplay').textContent = `${Math.round(gameState.zoomLevel * 100)}%`;
 
-    // Highlight valid moves on the keypad
     keypadOrder.forEach(number => {
         const btn = document.getElementById(`key-${number}`);
         if (btn) {
@@ -134,13 +134,11 @@ function levelEnd() {
     gameState.sumOfPerformanceScores += roundPerf;
     gameState.levelsCompleted++; 
 
-    // Show performance rating briefly
     const perfEl = document.getElementById('roundPerformance');
     perfEl.textContent = `PERF: ${Math.floor(roundPerf)}%`;
     perfEl.style.opacity = 1;
     setTimeout(() => { perfEl.style.opacity = 0; }, 2000);
     
-    // Transition to the narrative screen
     setTimeout(() => { showNarrativeScreen(gameController); }, 2500);
 }
 
@@ -154,7 +152,6 @@ function startNextLevel() {
     mainRenderLoop();
 }
 
-// A central object passed to other modules to avoid circular dependencies
 const gameController = {
     gameState,
     updateUI,
@@ -165,39 +162,55 @@ const gameController = {
     getHexNeighbors,
 };
 
-function initializeGame() {
+// A flag to ensure audio initialization and music playback only happen once.
+let isAudioStarted = false;
+
+/**
+ * A single function to handle unlocking the AudioContext and starting the music.
+ * This is passed to the intro module to be called on the very first user click.
+ */
+async function startAudioSystem() {
+    if (isAudioStarted) return; // Prevent this from ever running twice.
+    isAudioStarted = true;
+
+    initAudio(); // Initialize the AudioContext and gain nodes.
+    await playBackgroundMusic(); // Immediately start fetching and playing the music.
+}
+
+async function initializeGame() {
+    // Show the intro and wait for it to complete.
+    // Pass our combined audio function as the callback to be fired on first click.
+    await showIntro(startAudioSystem);
+
+    // --- The rest of the setup happens AFTER the intro is done ---
+
     gameState.canvas = document.getElementById('gameCanvas');
     gameState.ctx = gameState.canvas.getContext('2d');
 
-    // CRITICAL FIX: This resize handler correctly sizes the canvas on all devices.
     const resizeCanvas = () => {
-        // We measure the container, not the canvas, because its size is more stable
-        // during the page's render cycle, preventing race conditions on mobile.
         const container = document.getElementById('gameCanvasContainer');
         if (container) {
             gameState.canvas.width = container.offsetWidth;
             gameState.canvas.height = container.offsetHeight;
         }
-        // If the game is already running, redraw immediately to avoid visual glitches.
         if (gameState.gameRunning) render(gameState);
     };
 
     window.addEventListener('resize', resizeCanvas);
-    resizeCanvas(); // Initial size setup
-
+    resizeCanvas();
+    
     initializeParticles();
 
-    // Set up all event listeners
     initializeInput({
         onKey: (number) => handleMove(number, gameController),
         onPause: togglePause,
-        onAudioUnlock: initAudio,
+        onAudioUnlock: () => {}, // The intro now handles all audio unlocking.
         onZoomIn: zoomIn,
         onZoomOut: zoomOut,
     });
 
     updateUI();
-    showNarrativeScreen(gameController); // Start with the first narrative scene
+    showNarrativeScreen(gameController);
 }
 
 // Let's go!
