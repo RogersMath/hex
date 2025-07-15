@@ -103,7 +103,7 @@ function levelEnd() {
     gameState.totalPerformanceScore = (gameState.totalPerformanceScore * (gameState.level - 1) + roundPerf) / gameState.level;
 
     const perfEl = document.getElementById('roundPerformance');
-    perfEl.textContent = `PERF: ${Math.floor(roundPerf)}%`;
+    perfEl.textContent = `PERFORMANCE: ${Math.floor(roundPerf)}%`;
     perfEl.style.opacity = 1;
     setTimeout(() => { perfEl.style.opacity = 0; }, 2000);
     
