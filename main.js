@@ -14,9 +14,9 @@ const gameState = {
     gamePaused: false,
     level: 1,
 
-    // NEW: Accessibility and View state
-    zoomLevel: 1.0, // Start with no zoom
-    cameraOffset: { x: 0, y: 0 }, // For panning the camera
+    // Accessibility and View state
+    zoomLevel: 1.0,
+    cameraOffset: { x: 0, y: 0 },
     
     // Time and performance
     startTime: 0,
@@ -39,13 +39,73 @@ const gameState = {
     // Canvas context
     canvas: null,
     ctx: null,
+
+    // NEW: Particle system state
+    particles: [],
 };
+
+// === NEW: PARTICLE SYSTEM LOGIC ===
+
+/**
+ * Creates a single particle with random properties.
+ * @returns {object} A particle object.
+ */
+function createParticle() {
+    return {
+        x: gameState.canvas ? Math.random() * gameState.canvas.width : 0,
+        y: gameState.canvas ? Math.random() * gameState.canvas.height : 0,
+        vx: (Math.random() - 0.5) * 0.3, // Slow random movement
+        vy: (Math.random() - 0.5) * 0.3,
+        life: 1.0,
+        decay: Math.random() * 0.005 + 0.001, // Random fade rate
+    };
+}
+
+/**
+ * Initializes the background particle system.
+ */
+function initializeParticles() {
+    const particleCount = 100; // Adjust as needed for density
+    for (let i = 0; i < particleCount; i++) {
+        gameState.particles.push(createParticle());
+    }
+}
+
+/**
+ * Updates the position and life of all particles for one frame.
+ */
+function updateParticles() {
+    if (!gameState.canvas) return;
+    const { width, height } = gameState.canvas;
+
+    for (let i = 0; i < gameState.particles.length; i++) {
+        const p = gameState.particles[i];
+
+        // Update position
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Update life
+        p.life -= p.decay;
+
+        // Recycle particle if it's dead
+        if (p.life <= 0) {
+            gameState.particles[i] = createParticle();
+        }
+
+        // Wrap around screen edges
+        if (p.x > width) p.x = 0;
+        else if (p.x < 0) p.x = width;
+        if (p.y > height) p.y = 0;
+        else if (p.y < 0) p.y = height;
+    }
+}
+
 
 // === NEW: ZOOM AND CAMERA LOGIC ===
 function setZoom(newZoom) {
-    // Clamp the zoom level between 0.5x and 3x
     gameState.zoomLevel = Math.max(0.5, Math.min(newZoom, 3.0));
-    updateUI(); // Update the zoom level display
+    updateUI();
 }
 
 function zoomIn() {
@@ -75,7 +135,10 @@ function togglePause() {
 
 function mainRenderLoop() {
     if (gameState.gamePaused || !gameState.gameRunning) return;
+
+    updateParticles(); // NEW: Update particle state each frame
     render(gameState);
+
     requestAnimationFrame(mainRenderLoop);
 }
 
@@ -84,8 +147,6 @@ function updateUI() {
     document.getElementById('fragments').textContent = gameState.dataFragments;
     const avgPerf = gameState.totalPerformanceScore > 0 ? Math.round(gameState.totalPerformanceScore) : '--';
     document.getElementById('avgPerf').textContent = avgPerf === '--' ? avgPerf : `${avgPerf}%`;
-    
-    // UPDATED: Also update zoom display
     document.getElementById('zoomLevelDisplay').textContent = `${Math.round(gameState.zoomLevel * 100)}%`;
 
     const buttons = document.querySelectorAll('.keypad-btn');
@@ -103,7 +164,7 @@ function levelEnd() {
     gameState.totalPerformanceScore = (gameState.totalPerformanceScore * (gameState.level - 1) + roundPerf) / gameState.level;
 
     const perfEl = document.getElementById('roundPerformance');
-    perfEl.textContent = `PERFORMANCE: ${Math.floor(roundPerf)}%`;
+    perfEl.textContent = `PERF: ${Math.floor(roundPerf)}%`;
     perfEl.style.opacity = 1;
     setTimeout(() => { perfEl.style.opacity = 0; }, 2000);
     
@@ -144,7 +205,8 @@ function initializeGame() {
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // UPDATED: Pass zoom functions to the input initializer
+    initializeParticles(); // NEW: Create the initial set of particles
+
     initializeInput({
         onKey: (number) => handleMove(number, gameController),
         onPause: togglePause,
@@ -153,7 +215,7 @@ function initializeGame() {
         onZoomOut: zoomOut,
     });
     
-    updateUI(); // Initial UI update to set zoom display
+    updateUI();
     showNarrativeScreen(gameController);
 }
 
