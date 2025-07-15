@@ -35,145 +35,79 @@ body {
     background: transparent;
 }
 
-
-/* === CORRECTED: Bottom UI Panel Layout === */
+/* === MODIFIED: Bottom UI Panel Layout === */
 #bottomUIPanel {
-    height: 25vh; /* REDUCED: Take a more reasonable 25% of the screen height */
+    height: 40vh; /* CRITICAL: Dedicate bottom 40% of screen height */
     flex-shrink: 0;
     display: flex;   
-    flex-direction: row; /* CRITICAL: Ensure direction is horizontal */
+    flex-direction: row;
     background: linear-gradient(180deg, #001122 0%, #000011 100%);
     border-top: 3px solid #00ffff;
     box-shadow: 0 -10px 30px rgba(0, 255, 255, 0.3);
-    padding: 15px;
-    gap: 15px;
+    padding: 2vh; /* Use responsive padding */
+    gap: 2vh;
 }
 
 #keypadArea {
-    flex-basis: 60%; /* Take 60% of the panel's width */
+    flex-basis: 60%;
     height: 100%;    
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
+    grid-template-rows: repeat(3, 1fr); /* Ensure rows are also evenly spaced */
+    gap: inherit; /* Inherit the gap from the parent */
 }
 
+/* === NEW: Info Panel Grid System === */
 #infoAndControls {
-    flex-basis: 40%; /* Take 40% of the panel's width */
+    flex-basis: 40%;
     height: 100%;
-    border: 1px solid #004466;
-    border-radius: 10px;
-    padding: clamp(5px, 2vh, 15px); /* Responsive padding */
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Center items horizontally */
-    justify-content: space-around; /* Distribute items vertically */
-    background: rgba(0,0,0,0.2);
+    display: grid; /* THIS IS THE KEY CHANGE */
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: inherit; /* Inherit the gap from the parent for consistency */
 }
 
-
-/* === MODIFIED: UI elements within the right-hand panel === */
-.ui-text {
-    font-weight: 700;
-    text-shadow: 0 0 8px #00ffff;
-    font-size: clamp(0.8rem, 2vh, 1.1rem); /* Font size scales with viewport height */
-    text-align: center;
-}
-
-.pause-btn {
-    background: linear-gradient(135deg, rgba(255, 255, 0, 0.2), rgba(255, 191, 0, 0.2));
-    border: 2px solid #ffff00;
-    border-radius: 8px;
-    color: #ffff00;
-    font-family: 'Courier New', monospace;
-    font-size: clamp(0.8rem, 2vh, 1rem);
-    font-weight: 700;
-    padding: 8px 15px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 10px rgba(255, 255, 0, 0.3);
-    text-shadow: 0 0 8px #ffff00;
-    width: 80%;
-    max-width: 200px;
-}
-
-.pause-btn:hover {
-    background: linear-gradient(135deg, rgba(255, 255, 0, 0.3), rgba(255, 255, 0, 0.4));
-    transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 3px 15px rgba(255, 255, 0, 0.5);
-}
-
-.volume-control {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.volume-slider {
-    width: 80px;
-    height: 4px;
-    background: #004466;
-    border-radius: 2px;
-    outline: none;
-    -webkit-appearance: none;
-}
-
-.volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
-    background: #00ffff;
-    border-radius: 50%;
-    cursor: pointer;
-}
-
-.volume-slider::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
-    background: #00ffff;
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-}
-
-.zoom-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-}
-
-.zoom-btn {
+/* NEW: Style for each box in the info grid */
+.info-box {
     background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 191, 255, 0.1));
-    border: 2px solid #00ffff;
+    border: 2px solid #004466; /* Subtler border */
+    border-radius: 15px;
     color: #00ffff;
     font-family: 'Courier New', Courier, monospace;
-    font-weight: 900;
-    font-size: 1.2rem;
-    line-height: 1;
-    cursor: pointer;
+    font-weight: 700;
     transition: all 0.3s ease;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    text-shadow: 0 0 10px #00ffff;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2), inset 0 0 10px rgba(0, 255, 255, 0.05);
+    font-size: clamp(1.2rem, 4vh, 2rem); /* Larger, responsive font */
+}
+
+.info-label {
+    font-size: clamp(0.7rem, 2vh, 0.9rem); /* Smaller label text */
+    font-weight: 400;
+    color: #00aaff;
+    margin-bottom: 5px;
+}
+
+.control-group {
     display: flex;
     align-items: center;
     justify-content: center;
-    text-shadow: 0 0 8px #00ffff;
-    padding-bottom: 2px;
+    gap: 10px;
+    width: 100%;
 }
 
-.zoom-btn:hover {
-    background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(0, 255, 255, 0.3));
-    transform: scale(1.1);
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-}
-
+/* Keypad button styles are largely unchanged, but font is tweaked */
 .keypad-btn {
     background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 191, 255, 0.1));
     border: 2px solid #00ffff;
     border-radius: 15px;
     color: #00ffff;
-    font-size: clamp(2rem, 8vh, 4.5rem); /* Keypad font is now larger */
+    font-size: clamp(2rem, 8vh, 5rem); /* Font size now scales with viewport height */
     font-family: 'Courier New', Courier, monospace;
     font-weight: 900;
     cursor: pointer;
@@ -190,6 +124,60 @@ body {
     background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(0, 255, 255, 0.3));
     transform: translateY(-2px) scale(1.02);
 }
+
+
+/* MODIFIED: Pause button inherits from info-box and adds its own colors */
+.pause-btn {
+    background: linear-gradient(135deg, rgba(255, 255, 0, 0.2), rgba(255, 191, 0, 0.2));
+    border-color: #ffff00;
+    color: #ffff00;
+    text-shadow: 0 0 8px #ffff00;
+    width: 100%; /* Fill its grid cell */
+    height: 100%;
+    cursor: pointer;
+}
+
+.pause-btn:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 0, 0.3), rgba(255, 255, 0, 0.4));
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 3px 15px rgba(255, 255, 0, 0.5);
+}
+
+
+/* Other UI Control fine-tuning */
+.volume-slider {
+    width: 60%;
+    height: 4px;
+    background: #004466;
+    border-radius: 2px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #00ffff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.zoom-btn {
+    background: transparent;
+    border: 2px solid #00ffff;
+    color: #00ffff;
+    font-weight: 900;
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+
+/* === Unchanged Styles Below (Overlays, Animations, etc.) === */
 
 .keypad-btn.valid-move {
     border-color: #00ff7f;
@@ -208,9 +196,6 @@ body {
     color: #ff8888; 
     animation: incorrectShake 0.5s ease; 
 }
-
-
-/* === Overlays and Other UI (Unchanged) === */
 
 #roundPerformance {
     position: absolute;
@@ -273,7 +258,7 @@ body {
     border: 2px solid #00ffff;
     border-radius: 15px;
     color: #00ffff;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'Courier New', monospace;
     font-size: 1.2rem;
     font-weight: 700;
     padding: 15px 30px;
