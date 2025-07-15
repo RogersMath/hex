@@ -178,11 +178,7 @@ async function startAudioSystem() {
 }
 
 async function initializeGame() {
-    // Show the intro and wait for it to complete.
-    // Pass our combined audio function as the callback to be fired on first click.
     await showIntro(startAudioSystem);
-
-    // --- The rest of the setup happens AFTER the intro is done ---
 
     gameState.canvas = document.getElementById('gameCanvas');
     gameState.ctx = gameState.canvas.getContext('2d');
@@ -197,14 +193,21 @@ async function initializeGame() {
     };
 
     window.addEventListener('resize', resizeCanvas);
+    
+    // Run the resize function initially.
     resizeCanvas();
+    
+    // CRITICAL FIX: Run resize again after a short delay.
+    // This solves mobile browser race conditions where the layout isn't
+    // final when the first call is made.
+    setTimeout(resizeCanvas, 100);
     
     initializeParticles();
 
     initializeInput({
         onKey: (number) => handleMove(number, gameController),
         onPause: togglePause,
-        onAudioUnlock: () => {}, // The intro now handles all audio unlocking.
+        onAudioUnlock: () => {},
         onZoomIn: zoomIn,
         onZoomOut: zoomOut,
     });
