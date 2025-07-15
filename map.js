@@ -1,25 +1,16 @@
 // map.js - Handles hex grid logic and procedural maze generation.
 
+import { axialToPixel } from './map.js';
+
 const HEX_SIZE = 35; // Defines the visual size of a hex.
 const BASE_GRID_RADIUS = 3; // The starting radius of the map.
 
-/**
- * Converts axial hex coordinates to raw pixel coordinates (without camera adjustments).
- * @param {object} coords The axial coordinates { q, r }.
- * @returns {object} The raw pixel coordinates { x, y }.
- */
 export function axialToPixel({ q, r }) {
     const x = HEX_SIZE * (1.5 * q);
     const y = HEX_SIZE * (Math.sqrt(3) / 2 * q + Math.sqrt(3) * r);
     return { x, y };
 }
 
-/**
- * Calculates the Euclidean distance between two hexes.
- * @param {object} a The first hex coordinates { q, r }.
- * @param {object} b The second hex coordinates { q, r }.
- * @returns {number} The distance in hex units.
- */
 function hexDistance(a, b) {
     const dQ = Math.abs(a.q - b.q);
     const dR = Math.abs(a.r - b.r);
@@ -27,11 +18,6 @@ function hexDistance(a, b) {
     return Math.max(dQ, dR, dS);
 }
 
-/**
- * Returns the six neighbors of a given hex.
- * @param {object} coords The coordinates of the hex { q, r }.
- * @returns {Array<object>} An array of neighbor coordinates.
- */
 export function getHexNeighbors({ q, r }) {
     return [
         { q: q + 1, r: r }, { q: q - 1, r: r },
@@ -49,8 +35,16 @@ export function generateMaze(gameState) {
 
     hexGrid.clear();
     
-    // The grid grows larger as the level increases.
-    const currentGridRadius = Math.min(BASE_GRID_RADIUS + Math.floor(level / 3), 7);
+    // MODIFIED: Special case for a much larger final level.
+    const finalLevel = 6; // Based on the length of the narrative.
+    let currentGridRadius;
+
+    if (level === finalLevel) {
+        currentGridRadius = 9; // A much larger "boss" maze.
+    } else {
+        // The grid grows larger as the level increases.
+        currentGridRadius = Math.min(BASE_GRID_RADIUS + Math.floor(level / 3), 7);
+    }
     
     // 1. Generate a list of all possible hexes within the radius.
     const allHexes = [];
@@ -81,7 +75,6 @@ export function generateMaze(gameState) {
         const neighbors = getHexNeighbors({ q, r });
         const mazeNeighbors = neighbors.filter(n => mazeKeys.has(`${n.q},${n.r}`));
         
-        // Add the wall to the maze if it connects to only one existing cell.
         if (mazeNeighbors.length === 1) {
             mazeKeys.add(randomWallKey);
             neighbors.forEach(neighbor => {
@@ -101,7 +94,6 @@ export function generateMaze(gameState) {
     // 3. Populate the main hexGrid in the gameState with the maze data.
     mazeCoords.forEach(coords => {
         let type = 'normal';
-        // Add a chance for a special "data" node to appear.
         if (yellowNodeChance && Math.random() < 0.15) {
             type = 'data';
         }
