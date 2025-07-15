@@ -1,6 +1,6 @@
 // map.js - Handles hex grid logic and procedural maze generation.
 
-import { axialToPixel } from './map.js';
+// The erroneous import statement that was here has been REMOVED.
 
 const HEX_SIZE = 35; // Defines the visual size of a hex.
 const BASE_GRID_RADIUS = 3; // The starting radius of the map.
@@ -35,18 +35,15 @@ export function generateMaze(gameState) {
 
     hexGrid.clear();
     
-    // MODIFIED: Special case for a much larger final level.
-    const finalLevel = 6; // Based on the length of the narrative.
+    const finalLevel = 6;
     let currentGridRadius;
 
     if (level === finalLevel) {
-        currentGridRadius = 9; // A much larger "boss" maze.
+        currentGridRadius = 9;
     } else {
-        // The grid grows larger as the level increases.
         currentGridRadius = Math.min(BASE_GRID_RADIUS + Math.floor(level / 3), 7);
     }
     
-    // 1. Generate a list of all possible hexes within the radius.
     const allHexes = [];
     for (let q = -currentGridRadius; q <= currentGridRadius; q++) {
         for (let r = Math.max(-currentGridRadius, -q - currentGridRadius); r <= Math.min(currentGridRadius, -q + currentGridRadius); r++) {
@@ -54,7 +51,6 @@ export function generateMaze(gameState) {
         }
     }
     
-    // 2. Use a modified Prim's algorithm to carve a maze.
     const mazeKeys = new Set();
     const startNode = allHexes[Math.floor(Math.random() * allHexes.length)];
     mazeKeys.add(`${startNode.q},${startNode.r}`);
@@ -91,7 +87,6 @@ export function generateMaze(gameState) {
         return { q, r };
     });
 
-    // 3. Populate the main hexGrid in the gameState with the maze data.
     mazeCoords.forEach(coords => {
         let type = 'normal';
         if (yellowNodeChance && Math.random() < 0.15) {
@@ -106,7 +101,6 @@ export function generateMaze(gameState) {
         });
     });
 
-    // 4. Set player and exit positions in the gameState.
     gameState.playerPos = mazeCoords[Math.floor(Math.random() * mazeCoords.length)];
 
     let bestExit = gameState.playerPos;
