@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CRITICAL FIX: This meta tag prevents pinch-zooming and panning on mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>HEX</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -17,9 +18,8 @@
         <div id="bottomUIPanel">
             <div id="keypadArea"></div>
 
-            <!-- MODIFIED: The info panel is now a container for 6 grid items -->
             <div id="infoAndControls">
-                <!-- Each item is wrapped in an "info-box" for grid styling -->
+                <!-- Info boxes remain the same -->
                 <div class="info-box">
                     <span class="info-label">Level</span>
                     <span id="level">1</span>
@@ -47,13 +47,12 @@
                         <input type="range" class="volume-slider" min="0" max="100" value="30" id="volumeSlider">
                     </div>
                 </div>
-                <!-- The pause button now also gets the info-box class to fit the grid -->
                 <button class="pause-btn info-box" id="pauseBtn">⏸ PAUSE</button>
             </div>
         </div>
     </div>
 
-    <!-- Overlays are unchanged -->
+    <!-- Overlays remain the same -->
     <div id="pauseScreen">
         <div class="pause-instructions">
             <h3>⬡ GAME PAUSED ⬡</h3>
