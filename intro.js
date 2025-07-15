@@ -2,10 +2,8 @@
 
 /**
  * Injects the necessary CSS for the intro screen into the document's head.
- * It's self-contained to make the module reusable and prevent style conflicts.
  */
 function injectCSS() {
-    // Prevents injecting styles more than once
     if (document.getElementById('intro-styles')) return;
 
     const styles = `
@@ -14,9 +12,7 @@ function injectCSS() {
             top: 0; left: 0;
             width: 100vw; height: 100vh;
             background: #000;
-            color: #ccc;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             font-family: 'Courier New', Courier, monospace;
@@ -60,35 +56,43 @@ function injectCSS() {
             justify-content: center;
         }
         .intro-hex-svg {
-            width: 66.67vw; /* Occupies middle 2/3 of horizontal space */
-            max-width: 500px;
+            /* MODIFIED: Increased size for better text fit */
+            width: 75vw;
+            max-width: 600px;
             filter: drop-shadow(0 0 15px #ff00ff) drop-shadow(0 0 25px #ff00ff);
-            overflow: visible; /* Important for the glow */
+            overflow: visible;
         }
         .intro-hex-path {
             stroke: #ff00ff;
-            stroke-width: 5;
+            stroke-width: 4; /* Slightly thinner for a cleaner look */
             fill: none;
         }
         .intro-text-anim {
             position: absolute;
-            font-size: clamp(1.5rem, 5vw, 3rem);
+            font-size: clamp(2rem, 8vw, 4.5rem); /* Larger font size */
             font-weight: bold;
             opacity: 0;
-            transition: opacity 1s ease-in-out;
-            color: #fff;
-            text-shadow: 0 0 8px #fff;
+            transition: opacity 1.5s ease-in-out;
         }
         .intro-text-anim.fade-in {
             opacity: 1;
         }
-        .intro-text-anim .green {
+
+        /* NEW: Styles for the HEXIT letter-by-letter animation */
+        .letter {
+            /* This transition is key: it will animate color and opacity changes smoothly */
+            transition: color 1.5s ease-in-out, opacity 1.5s ease-in-out;
+        }
+        .green {
             color: #00ff7f;
             text-shadow: 0 0 8px #00ff7f;
         }
-        .intro-text-anim .purple {
+        .purple {
             color: #ff88ff;
             text-shadow: 0 0 8px #ff88ff;
+        }
+        .transparent {
+            opacity: 0;
         }
     `;
 
@@ -98,29 +102,19 @@ function injectCSS() {
     document.head.appendChild(styleSheet);
 }
 
-/**
- * A helper function to pause execution, making animation sequences readable.
- * @param {number} ms - The number of milliseconds to wait.
- * @returns {Promise<void>}
- */
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-/**
- * Runs the title animation sequence.
- * @param {HTMLElement} container - The main container for the intro.
- */
 async function runAnimation(container) {
-    // Clear the initial prompt
     container.innerHTML = ''; 
 
-    // Create animation elements
     const hexContainer = document.createElement('div');
     hexContainer.className = 'intro-hex-container';
 
-    // Using SVG for a perfect, scalable hexagon
+    // MODIFIED: Switched to a flat-top hexagon SVG for game consistency.
+    // The viewBox is now wider than it is tall.
     hexContainer.innerHTML = `
         <svg class="intro-hex-svg" viewBox="0 0 100 86.6">
-          <polygon class="intro-hex-path" points="50,0 100,25 100,75 50,86.6 0,75 0,25" />
+          <polygon class="intro-hex-path" points="25,0 75,0 100,43.3 75,86.6 25,86.6 0,43.3" />
         </svg>
     `;
 
@@ -129,38 +123,62 @@ async function runAnimation(container) {
     hexContainer.appendChild(textEl);
     container.appendChild(hexContainer);
 
-    // Animation sequence
-    await sleep(500); // Give a moment before the first text
-
+    // --- Sequence Part 1: Producer Credits ---
+    await sleep(500);
     textEl.textContent = "Rogersmath Presents";
     textEl.classList.add('fade-in');
-    await sleep(3000); // Show for 2s, fade for 1s
+    await sleep(3000);
     textEl.classList.remove('fade-in');
-    await sleep(1000); // Wait for fade-out
+    await sleep(1500);
 
     textEl.textContent = "A Jesse Rogers Production";
     textEl.classList.add('fade-in');
     await sleep(3000);
     textEl.classList.remove('fade-in');
-    await sleep(1000);
+    await sleep(1500);
 
-    textEl.innerHTML = '<span class="green">H</span><span class="purple">EX</span>';
+    // --- Sequence Part 2: HEXIT Animation ---
+    
+    // Create the full "HEXIT" structure, with each letter in a separate span
+    textEl.innerHTML = `
+        <span class="letter" id="h-letter">H</span><span class="letter" id="e-letter">E</span><span class="letter" id="x-letter">X</span><span class="letter" id="i-letter">I</span><span class="letter" id="t-letter">T</span>
+    `;
+
+    // Get handles to each letter
+    const h = document.getElementById('h-letter');
+    const e = document.getElementById('e-letter');
+    const x = document.getElementById('x-letter');
+    const i = document.getElementById('i-letter');
+    const t = document.getElementById('t-letter');
+
+    // Set the initial state: "HEX" is green, "IT" is transparent
+    h.className = 'letter green';
+    e.className = 'letter green';
+    x.className = 'letter green';
+    i.className = 'letter purple transparent';
+    t.className = 'letter purple transparent';
+    
+    // Fade in the initial "HEX"
     textEl.classList.add('fade-in');
     await sleep(2500);
 
-    textEl.innerHTML = '<span class="green">H</span><span class="purple">EXIT</span>';
-    await sleep(3000);
-    textEl.classList.remove('fade-in');
+    // Trigger the transition:
+    // Change E and X to purple. The CSS transition will handle the color blend.
+    e.className = 'letter purple';
+    x.className = 'letter purple';
+    // Make I and T visible. The CSS transition will handle the fade-in.
+    i.className = 'letter purple';
+    t.className = 'letter purple';
     
-    await sleep(1000); // Final fade before finishing
+    // Hold on the final "HEXIT" title
+    await sleep(3000);
+    
+    // Fade out everything to end the intro
+    textEl.classList.remove('fade-in');
+    await sleep(1500);
 }
 
-/**
- * Displays the intro screen and returns a Promise that resolves when the intro is complete.
- * @param {function} onStart - A callback function that is fired IMMEDIATELY on the first user interaction
- * to unlock the Web Audio API and start the music.
- * @returns {Promise<void>}
- */
+
 export function showIntro(onStart) {
     injectCSS();
 
@@ -184,17 +202,15 @@ export function showIntro(onStart) {
         document.body.appendChild(container);
         
         teachButton.onclick = () => {
-            if (onStart) onStart(); // Fire the callback to start audio.
+            if (onStart) onStart();
             window.open('https://www.youtube.com/@rogersmath1939', '_blank');
         };
 
         startButton.onclick = async () => {
-            if (onStart) onStart(); // Fire the callback to start audio.
+            if (onStart) onStart();
             
-            // Run the animation sequence.
             await runAnimation(container);
             
-            // Clean up and resolve the promise to start the main game.
             document.body.removeChild(container);
             resolve();
         };
