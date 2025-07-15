@@ -17,10 +17,7 @@ const gameState = {
     startTime: 0,
     pauseTime: 0,
     totalPausedTime: 0,
-    
-    // MODIFIED: Now storing the sum for a simple average calculation.
-    sumOfPerformanceScores: 0, 
-    
+    sumOfPerformanceScores: 0,
     dataFragments: 0,
     performanceRating: 0,
     yellowNodeChance: false,
@@ -35,14 +32,57 @@ const gameState = {
 };
 
 // --- Particle logic is unchanged ---
-function createParticle() { /* ... */ }
-function initializeParticles() { /* ... */ }
-function updateParticles() { /* ... */ }
+function createParticle() {
+    return {
+        x: gameState.canvas ? Math.random() * gameState.canvas.width : 0,
+        y: gameState.canvas ? Math.random() * gameState.canvas.height : 0,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        life: 1.0,
+        decay: Math.random() * 0.005 + 0.001,
+    };
+}
 
-// --- Zoom logic is unchanged ---
-function setZoom(newZoom) { /* ... */ }
-function zoomIn() { /* ... */ }
-function zoomOut() { /* ... */ }
+function initializeParticles() {
+    const particleCount = 100;
+    for (let i = 0; i < particleCount; i++) {
+        gameState.particles.push(createParticle());
+    }
+}
+
+function updateParticles() {
+    if (!gameState.canvas) return;
+    const { width, height } = gameState.canvas;
+    for (let i = 0; i < gameState.particles.length; i++) {
+        const p = gameState.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= p.decay;
+        if (p.life <= 0) {
+            gameState.particles[i] = createParticle();
+        }
+        if (p.x > width) p.x = 0;
+        else if (p.x < 0) p.x = width;
+        if (p.y > height) p.y = 0;
+        else if (p.y < 0) p.y = height;
+    }
+}
+
+
+// === ZOOM AND CAMERA LOGIC ===
+function setZoom(newZoom) {
+    gameState.zoomLevel = Math.max(0.5, Math.min(newZoom, 3.0));
+}
+
+function zoomIn() {
+    setZoom(gameState.zoomLevel + 0.2);
+    updateUI(); // MODIFIED: Call updateUI to refresh the display.
+}
+
+function zoomOut() {
+    setZoom(gameState.zoomLevel - 0.2);
+    updateUI(); // MODIFIED: Call updateUI to refresh the display.
+}
 
 // === CORE GAME LOOP & CONTROL ===
 
@@ -72,7 +112,6 @@ function updateUI() {
     document.getElementById('level').textContent = gameState.level;
     document.getElementById('fragments').textContent = gameState.dataFragments;
 
-    // MODIFIED: Calculate a true average for display.
     const levelsCompleted = gameState.level - 1;
     let avgPerfText = '--';
     if (levelsCompleted > 0) {
@@ -83,12 +122,13 @@ function updateUI() {
     
     document.getElementById('zoomLevelDisplay').textContent = `${Math.round(gameState.zoomLevel * 100)}%`;
 
+    // MODIFIED: This logic is now correct.
+    // It finds each button by its ID (`key-1`, `key-2`, etc.) and toggles the class.
     const buttons = document.querySelectorAll('.keypad-btn');
-    buttons.forEach((btn, index) => {
-        // This logic relies on the keypadOrder array in input.js
-        const keypadOrder = [7, 8, 9, 4, 5, 6, 1, 2, 3];
-        const number = keypadOrder[index];
-        btn.classList.toggle('valid-move', gameState.validMoves.some(move => move.answer === number));
+    buttons.forEach(btn => {
+        const number = parseInt(btn.textContent, 10);
+        const isValid = gameState.validMoves.some(move => move.answer === number);
+        btn.classList.toggle('valid-move', isValid);
     });
 }
 
@@ -98,7 +138,6 @@ function levelEnd() {
     const elapsedSeconds = (Date.now() - gameState.startTime - gameState.totalPausedTime) / 1000;
     const roundPerf = Math.max(10, 100 - Math.max(0, elapsedSeconds - parTime));
     
-    // MODIFIED: Simply add the new score to the running total.
     gameState.sumOfPerformanceScores += roundPerf;
 
     const perfEl = document.getElementById('roundPerformance');
