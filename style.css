@@ -1,5 +1,12 @@
 /* style.css - Main stylesheet for the HEX game. */
 
+@font-face {
+  font-family: 'Orbitron';
+  src: url('fonts/Orbitron-Regular.woff2') format('woff2');
+  font-weight: 400; /* 400 is the numeric value for 'normal' */
+  font-style: normal;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -12,7 +19,8 @@ html {
 }
 
 body {
-    font-family: 'Courier New', Courier, monospace;
+    /* FIX: Apply our new custom font to the entire game! */
+    font-family: 'Orbitron', 'Courier New', Courier, monospace;
     background: #000;
     color: #00ffff;
     overflow: hidden;
