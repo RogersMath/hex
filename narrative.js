@@ -38,7 +38,7 @@ const narrativeEngine = [
         ]
     },
     {
-        prompt: "The final maze is vast. The female voice says, \"You have done well. Show us your potential.\" The male voice adds, \"I think you could be what we're looking for. But we have to know for sure.\"",
+        prompt: "The final maze is... impossibly vast. The female voice says, \"You have done well. Show us your potential.\" The male voice adds, \"I think you could be what we're looking for. But we have to know for sure.\"",
         choices: [
             { text: "[Focus only on solving the maze]", action: (gs) => { gs.performanceRating += 20; }},
             { text: "[Collect every fragment you can find]", action: (gs) => { gs.dataFragmentBonus += 2; }}
@@ -91,7 +91,6 @@ export function endGame(gameController) {
     const choiceContainer = document.getElementById('choiceContainer');
     choiceContainer.innerHTML = '';
     
-    // MODIFIED: Calculate final performance using the corrected method.
     const levelsCompleted = gameState.level - 1;
     let finalAvgPerf = 0;
     if (levelsCompleted > 0) {
@@ -101,8 +100,14 @@ export function endGame(gameController) {
     const finalFrags = gameState.dataFragments + gameState.dataFragmentBonus;
     let endText = '';
     let endDialogue = '';
+    
+    const totalPossibleFragments = 1 + 2 + 3 + 4 + 5; // Fragments from levels 2-6
 
-    if (finalPerf >= 75 && finalFrags < 3) {
+    // This "True Ending" condition is checked first.
+    if (gameState.dataFragments >= totalPossibleFragments) {
+        endText = "\"I know who I was before they sent me here,\" you tell the operator. \"I remember what I did. But it doesn't matter. I'm not that person anymore. I know what you want, and I'll do it.\"";
+        endDialogue = "\"Interesting,\" replies the operator. \"Most interesting.\"";
+    } else if (finalPerf >= 75 && finalFrags < 3) {
         endText = "The Observer: \"Remarkable. The integration is flawless. The old personality is completely suppressed. Cognitive and strategic functions are operating at 3700% of normal human baseline. Advanced cryptographics present as little more than simple arithmetic to the subject.\"\n\nThe Operator: \"Welcome to the Syndicate, Asset. Your training is complete. The protocol is a success. You have a most... exciting career ahead of you.\"";
         endDialogue = "You feel no fear, no memory of your past self. Only purpose. You are a weapon, and you are ready.";
     } else if (finalPerf < 50 || finalFrags >= 5) {
