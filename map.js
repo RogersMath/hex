@@ -39,9 +39,9 @@ export function generateMaze(gameState) {
     let currentGridRadius;
 
     if (level === finalLevel) {
-        currentGridRadius = 9;
+        currentGridRadius = 25;
     } else {
-        currentGridRadius = Math.min(BASE_GRID_RADIUS + Math.floor(level / 3), 7);
+        currentGridRadius = Math.min(BASE_GRID_RADIUS + Math.floor(level), 7);
     }
     
     const allHexes = [];
