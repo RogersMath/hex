@@ -1,7 +1,5 @@
 // map.js - Handles hex grid logic and procedural maze generation.
 
-// The erroneous import statement that was here has been REMOVED.
-
 const HEX_SIZE = 35; // Defines the visual size of a hex.
 const BASE_GRID_RADIUS = 3; // The starting radius of the map.
 
@@ -31,7 +29,7 @@ export function getHexNeighbors({ q, r }) {
  * @param {object} gameState The central game state object from main.js.
  */
 export function generateMaze(gameState) {
-    const { hexGrid, level, yellowNodeChance } = gameState;
+    const { hexGrid, level } = gameState;
 
     hexGrid.clear();
     
@@ -39,9 +37,10 @@ export function generateMaze(gameState) {
     let currentGridRadius;
 
     if (level === finalLevel) {
+        // Updated to make the final level absurdly large.
         currentGridRadius = 25;
     } else {
-        currentGridRadius = Math.min(BASE_GRID_RADIUS + Math.floor(level), 7);
+        currentGridRadius = Math.min(BASE_GRID_RADIUS + Math.floor(level / 3), 7);
     }
     
     const allHexes = [];
@@ -88,15 +87,11 @@ export function generateMaze(gameState) {
     });
 
     mazeCoords.forEach(coords => {
-        let type = 'normal';
-        if (yellowNodeChance && Math.random() < 0.15) {
-            type = 'data';
-        }
         hexGrid.set(`${coords.q},${coords.r}`, {
             coords: coords,
             expression: '',
             answer: 0,
-            type: type,
+            type: 'normal',
             collected: false
         });
     });
@@ -117,5 +112,27 @@ export function generateMaze(gameState) {
     const exitHexData = hexGrid.get(`${gameState.exitPos.q},${gameState.exitPos.r}`);
     if (exitHexData) {
         exitHexData.type = 'exit';
+    }
+
+    // New logic to place a specific number of data fragments.
+    const numDataNodes = Math.max(0, level - 1);
+    
+    const potentialDataHexes = mazeCoords.filter(coords => {
+        const key = `${coords.q},${coords.r}`;
+        return key !== `${gameState.playerPos.q},${gameState.playerPos.r}` && 
+               key !== `${gameState.exitPos.q},${gameState.exitPos.r}`;
+    });
+
+    for (let i = potentialDataHexes.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [potentialDataHexes[i], potentialDataHexes[j]] = [potentialDataHexes[j], potentialDataHexes[i]];
+    }
+
+    for (let i = 0; i < numDataNodes && i < potentialDataHexes.length; i++) {
+        const coords = potentialDataHexes[i];
+        const hexData = hexGrid.get(`${coords.q},${coords.r}`);
+        if (hexData) {
+            hexData.type = 'data';
+        }
     }
 }
